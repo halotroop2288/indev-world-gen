@@ -38,9 +38,9 @@ public class IndevChunkGenerator extends SurfaceChunkGenerator<IndevChunkGenerat
 	}
 
 	public final Type type;
-	private final int size = 6; // the original mod changed this based on type
-	private final int layers = 1;
-	private final double width = 1;
+	private final int size; // the original mod changed this based on type
+	private final int layers = 4;
+	private final double width = 2D;
 
 	// I'm porting code from another mod back in 1.7.10
 	private OctaveIndevNoiseSampler noiseGen1;
@@ -67,6 +67,8 @@ public class IndevChunkGenerator extends SurfaceChunkGenerator<IndevChunkGenerat
 		this.perlin = new IndevNoiseSampler(this.random);
 
 		type = config.getType();
+		
+		this.size = type == Type.FLOATING ? 12 : 7;
 
 		this.random.consume(2620);
 	}
@@ -146,14 +148,9 @@ public class IndevChunkGenerator extends SurfaceChunkGenerator<IndevChunkGenerat
 		if (this.type != Type.FLOATING) {
 			super.carve(chunk, carverStep);
 		}
-	}
+	} // proudly stealing 1.7.10 code from https://github.com/Ted80-Minecraft-Mods/Old-World-Gen
 
 	public void generateSkylands(Chunk chunk, int chunkX, int chunkZ) {
-		/*if(world.getWorldInfo().getSpawnX() != 0)
-		{
-			world.getWorldInfo().setSpawnPosition(0, 256, 0);
-		}*/
-
 		int seaLevel = 64;
 		int startX = chunkX << 4;
 		int startZ = chunkZ << 4;
@@ -199,23 +196,16 @@ public class IndevChunkGenerator extends SurfaceChunkGenerator<IndevChunkGenerat
 						boolean flagSand = noiseGen3.sample(x + (layer * 2000F), z + (layer * 2000F)) > 52D + (less / 3D); 
 						boolean flagGravel = noiseGen11.sample(x + (layer * 2000F), z + (layer * 2000F)) > 62D + (less / 3D); 
 
-						for (int y = 0; y < 256; y++)
-						{
+						for (int y = 0; y < 256; y++) {
 							posMutable.setY(y);
 
 							BlockState toSet = AIR;
-							if(y == upperBound)
-							{
-								if(flagGravel)
-								{
+							if(y == upperBound) {
+								if(flagGravel) {
 									toSet = GRAVEL;
-								}
-								else if(flagSand)
-								{
+								} else if(flagSand) {
 									toSet = SAND;
-								}
-								else if(y > lowerBound)
-								{
+								} else if(y > lowerBound) {
 									toSet = STONE;
 								}
 							}
