@@ -1,11 +1,12 @@
 {
   "required": true,
-  "package": "ambos.indevworldgen.example.mixin",
+  "package": "ambos.indevworldgen.mixin",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
+    "MixinLevelGeneratorType",
+    "MixinOverworldDimension"
   ],
   "client": [
-    "ExampleMixin"
   ],
   "injectors": {
     "defaultRequire": 1
