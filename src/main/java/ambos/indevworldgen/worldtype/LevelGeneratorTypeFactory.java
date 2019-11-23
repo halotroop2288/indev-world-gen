@@ -4,17 +4,18 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
+import ambos.indevworldgen.mixin.AccessorLevelGeneratorType;
 import net.minecraft.world.level.LevelGeneratorType;
 
 public final class LevelGeneratorTypeFactory {
 	private LevelGeneratorTypeFactory() {}
 	
-	private static int cid = 7;
+	private static int idToUse = 7;
 	
 	// Credit: Beta-Plus mod, fabric 1.14
 	public static LevelGeneratorType createWorldType(String name) {
 		LevelGeneratorType levelGenType;
-		int id = cid;
+		int id = idToUse;
 		Field types = null;
 
 		for(Field f : LevelGeneratorType.class.getDeclaredFields()) {
@@ -36,8 +37,8 @@ public final class LevelGeneratorTypeFactory {
 
 				modifiers.setInt(types, types.getModifiers() & ~Modifier.FINAL);
 				types.set(null,newTypes);
-				id=LevelGeneratorType.TYPES.length - 1;
-				cid = id;
+				id = LevelGeneratorType.TYPES.length - 1;
+				idToUse = id;
 			}
 			catch (IllegalAccessException | NoSuchFieldException e) {
 				return null;
@@ -47,9 +48,7 @@ public final class LevelGeneratorTypeFactory {
 			return null;
 		}
 		try {
-			Constructor<LevelGeneratorType> constructor = LevelGeneratorType.class.getDeclaredConstructor(int.class, String.class);
-			constructor.setAccessible(true);
-			levelGenType = constructor.newInstance(id, name);
+			levelGenType = AccessorLevelGeneratorType.create(id, name);
 			levelGenType.setCustomizable(false);
 		} catch (Exception e) {
 			return null;
