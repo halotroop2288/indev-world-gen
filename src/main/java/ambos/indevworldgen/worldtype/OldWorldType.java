@@ -11,7 +11,6 @@ import ambos.indevworldgen.gen.IndevChunkGenerator;
 import ambos.indevworldgen.gen.IndevChunkGeneratorConfig;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.source.BiomeSourceType;
-import net.minecraft.world.biome.source.VanillaLayeredBiomeSource;
 import net.minecraft.world.biome.source.VanillaLayeredBiomeSourceConfig;
 import net.minecraft.world.gen.chunk.ChunkGenerator;
 import net.minecraft.world.level.LevelGeneratorType;
