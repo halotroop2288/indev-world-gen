@@ -10,7 +10,9 @@ import ambos.indevworldgen.IndevWorldGen;
 import ambos.indevworldgen.gen.IndevChunkGenerator;
 import ambos.indevworldgen.gen.IndevChunkGeneratorConfig;
 import net.minecraft.world.World;
+import net.minecraft.world.biome.Biomes;
 import net.minecraft.world.biome.source.BiomeSourceType;
+import net.minecraft.world.biome.source.FixedBiomeSourceConfig;
 import net.minecraft.world.biome.source.VanillaLayeredBiomeSourceConfig;
 import net.minecraft.world.gen.chunk.ChunkGenerator;
 import net.minecraft.world.level.LevelGeneratorType;
@@ -36,13 +38,46 @@ public class OldWorldType<T extends ChunkGenerator<?>> {
 	public final LevelGeneratorType generatorType;
 	public final WorldTypeChunkGeneratorFactory<T> chunkGenSupplier;
 	
-	// Instances
+	// ===================== Instances ============================
 	public static final OldWorldType<IndevChunkGenerator> INDEV = new OldWorldType<>("old_indev", (world) -> {
 		IndevChunkGeneratorConfig chunkGenConfig = new IndevChunkGeneratorConfig();
 		VanillaLayeredBiomeSourceConfig biomeSourceConfig = BiomeSourceType.VANILLA_LAYERED.getConfig().setLevelProperties(world.getLevelProperties()).setGeneratorSettings(chunkGenConfig);
 		
 		return IndevWorldGen.INSTANCE.create(world, BiomeSourceType.VANILLA_LAYERED.applyConfig(biomeSourceConfig), chunkGenConfig);
 	});
+	
+	public static final OldWorldType<IndevChunkGenerator> INDEV_HELL = new OldWorldType<>("old_indev_hell", (world) -> {
+		IndevChunkGeneratorConfig chunkGenConfig = new IndevChunkGeneratorConfig();
+		VanillaLayeredBiomeSourceConfig biomeSourceConfig = BiomeSourceType.VANILLA_LAYERED.getConfig().setLevelProperties(world.getLevelProperties()).setGeneratorSettings(chunkGenConfig);
+		
+		chunkGenConfig.setType(IndevChunkGenerator.Type.HELL);
+		return IndevWorldGen.INSTANCE.create(world, BiomeSourceType.VANILLA_LAYERED.applyConfig(biomeSourceConfig), chunkGenConfig);
+	});
+	
+	public static final OldWorldType<IndevChunkGenerator> INDEV_FLOATING = new OldWorldType<>("old_indev_floating", (world) -> {
+		IndevChunkGeneratorConfig chunkGenConfig = new IndevChunkGeneratorConfig();
+		VanillaLayeredBiomeSourceConfig biomeSourceConfig = BiomeSourceType.VANILLA_LAYERED.getConfig().setLevelProperties(world.getLevelProperties()).setGeneratorSettings(chunkGenConfig);
+		
+		chunkGenConfig.setType(IndevChunkGenerator.Type.FLOATING);
+		return IndevWorldGen.INSTANCE.create(world, BiomeSourceType.VANILLA_LAYERED.applyConfig(biomeSourceConfig), chunkGenConfig);
+	});
+	
+	public static final OldWorldType<IndevChunkGenerator> INDEV_WOODS = new OldWorldType<>("old_indev_woods", (world) -> {
+		IndevChunkGeneratorConfig chunkGenConfig = new IndevChunkGeneratorConfig();
+		FixedBiomeSourceConfig biomeSourceConfig = BiomeSourceType.FIXED.getConfig().setBiome(Biomes.FOREST);
+		
+		chunkGenConfig.setType(IndevChunkGenerator.Type.WOODS);
+		return IndevWorldGen.INSTANCE.create(world, BiomeSourceType.FIXED.applyConfig(biomeSourceConfig), chunkGenConfig);
+	});
+	
+	public static final OldWorldType<IndevChunkGenerator> INDEV_ISLAND = new OldWorldType<>("old_indev_island", (world) -> {
+		IndevChunkGeneratorConfig chunkGenConfig = new IndevChunkGeneratorConfig();
+		VanillaLayeredBiomeSourceConfig biomeSourceConfig = BiomeSourceType.VANILLA_LAYERED.getConfig().setLevelProperties(world.getLevelProperties()).setGeneratorSettings(chunkGenConfig);
+		
+		chunkGenConfig.setType(IndevChunkGenerator.Type.ISLAND);
+		return IndevWorldGen.INSTANCE.create(world, BiomeSourceType.VANILLA_LAYERED.applyConfig(biomeSourceConfig), chunkGenConfig);
+	});
+	// ===========================================================
 	
 	public static interface WorldTypeChunkGeneratorFactory<T extends ChunkGenerator<?>> {
 		T create(World world);

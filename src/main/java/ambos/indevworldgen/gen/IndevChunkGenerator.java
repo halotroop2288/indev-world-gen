@@ -22,6 +22,7 @@ import net.minecraft.world.gen.CatSpawner;
 import net.minecraft.world.gen.ChunkRandom;
 import net.minecraft.world.gen.PhantomSpawner;
 import net.minecraft.world.gen.PillagerSpawner;
+import net.minecraft.world.gen.GenerationStep.Carver;
 import net.minecraft.world.gen.chunk.SurfaceChunkGenerator;
 import net.minecraft.world.gen.feature.Feature;
 
@@ -36,8 +37,10 @@ public class IndevChunkGenerator extends SurfaceChunkGenerator<IndevChunkGenerat
 		HELL
 	}
 
-	public final Type type = Type.INLAND;
+	public final Type type;
 	private final int size = 6; // the original mod changed this based on type
+	private final int layers = 1;
+	private final double width = 1;
 
 	// I'm porting code from another mod back in 1.7.10
 	private OctaveIndevNoiseSampler noiseGen1;
@@ -48,10 +51,10 @@ public class IndevChunkGenerator extends SurfaceChunkGenerator<IndevChunkGenerat
 	public OctaveIndevNoiseSampler noiseGen6;
 	public OctaveIndevNoiseSampler noiseGen10;
 	public OctaveIndevNoiseSampler noiseGen11;
-	public IndevNoiseSampler perlinGen1;
+	public IndevNoiseSampler perlin;
 
-	public IndevChunkGenerator(IWorld world, BiomeSource biomeSource, IndevChunkGeneratorConfig chunkGeneratorConfig) {
-		super(world, biomeSource, 4, 8, 256, chunkGeneratorConfig, true);
+	public IndevChunkGenerator(IWorld world, BiomeSource biomeSource, IndevChunkGeneratorConfig config) {
+		super(world, biomeSource, 4, 8, 256, config, true);
 
 		this.noiseGen1 = new OctaveIndevNoiseSampler(this.random, 16);
 		this.noiseGen2 = new OctaveIndevNoiseSampler(this.random, 16);
@@ -61,7 +64,9 @@ public class IndevChunkGenerator extends SurfaceChunkGenerator<IndevChunkGenerat
 		this.noiseGen6 = new OctaveIndevNoiseSampler(this.random, 5);
 		this.noiseGen10 = new OctaveIndevNoiseSampler(this.random, 6);
 		this.noiseGen11 = new OctaveIndevNoiseSampler(this.random, 8);
-		this.perlinGen1 = new IndevNoiseSampler(this.random);
+		this.perlin = new IndevNoiseSampler(this.random);
+
+		type = config.getType();
 
 		this.random.consume(2620);
 	}
@@ -82,17 +87,34 @@ public class IndevChunkGenerator extends SurfaceChunkGenerator<IndevChunkGenerat
 	private static final BlockState DIRT = Blocks.DIRT.getDefaultState();
 	private static final BlockState GRAVEL = Blocks.GRAVEL.getDefaultState();
 	private static final BlockState SAND = Blocks.SAND.getDefaultState();
-	
-	// Should probably put this in build surface
-	public void generateSurfaceBlocks(int startX, int startZ, Chunk chunk) {
+
+	@Override
+	public void populateNoise(IWorld world, Chunk chunk) {
+	}
+
+	@Override
+	public void buildSurface(Chunk chunk) {
+		ChunkPos chunkPos = chunk.getPos();
+		if (this.type == Type.FLOATING) {
+			this.generateSkylands(chunk, chunkPos.x, chunkPos.z);
+			this.replaceSurfaceBlocks(chunk);
+		} else {
+			this.generateTerrain(chunk, chunkPos.x, chunkPos.z);
+		}
+	}
+
+	public void replaceSurfaceBlocks(Chunk chunk) {
 		BlockPos.Mutable pos = new BlockPos.Mutable();
 
 		for (int x = 0; x < 16; ++x) {
+			pos.setX(x);
 			for (int z = 0; z < 16; ++z) {
+				pos.setZ(z);
 				int run = -1;
 				boolean air = true;
 
 				for (int y = 255; y >= 0; --y) {
+					pos.setY(y);
 					BlockState b = AIR;
 
 					BlockState currentState = chunk.getBlockState(pos);
@@ -120,41 +142,121 @@ public class IndevChunkGenerator extends SurfaceChunkGenerator<IndevChunkGenerat
 	}
 	
 	@Override
-	public void populateNoise(IWorld world, Chunk chunk) {
-		//ChunkPos chunkPos = chunk.getPos();
-		//this.generateTerrain(chunk, chunkPos.x, chunkPos.z);
-		/*
-		BlockPos.Mutable pos = new BlockPos.Mutable();
+	public void carve(Chunk chunk, Carver carverStep) {
+		if (this.type != Type.FLOATING) {
+			super.carve(chunk, carverStep);
+		}
+	}
 
-		for (int localX = 0; localX < 16; ++localX) {
-			pos.setX(localX);
-			for (int localZ = 0; localZ < 16; ++localZ) {
-				pos.setZ(localZ);
-				for (int y = 255; y >= 0; y--) {
-					pos.setY(y);
-					chunk.setBlockState(pos, y < 66 ? Blocks.STONE.getDefaultState() : Blocks.AIR.getDefaultState(), false);
+	public void generateSkylands(Chunk chunk, int chunkX, int chunkZ) {
+		/*if(world.getWorldInfo().getSpawnX() != 0)
+		{
+			world.getWorldInfo().setSpawnPosition(0, 256, 0);
+		}*/
+
+		int seaLevel = 64;
+		int startX = chunkX << 4;
+		int startZ = chunkZ << 4;
+
+		BlockPos.Mutable posMutable = new BlockPos.Mutable();
+
+		if(chunkX > -size && chunkX < size && chunkZ > -size && chunkZ < size) // I should remove this :P infinite floating islands!
+		{
+			for(int layer = 0; layer < layers; ++layer)
+			{
+				for (int x = startX; x < startX + 16; ++x)
+				{
+					posMutable.setX(x & 15);
+					for (int z = startZ; z < startZ + 16; ++z)
+					{
+						posMutable.setZ(z & 15);
+
+						float sampledValue = (float)this.mainNoiseSampler.sample((x + (layer * 2000F)) / 4.0F, (z + (layer * 2000F)) / 4.0F);
+						int upperBound = 35 + (layer * 45) + ((int) sampledValue);
+
+						if(upperBound < 1) 
+						{ 
+							upperBound = 1; 
+						}
+
+						if ((float)this.mainNoiseSampler.sample(x, z) < 0.0F)
+						{
+							upperBound = upperBound / 2 << 1;
+							if ((float)this.mainNoiseSampler.sample(x / 5, z / 5) < 0.0F)
+							{
+								upperBound++;
+							}	
+						}
+
+						int thickness = -25;
+						int less = (int) Math.floor(Math.sqrt((x-0)*(x-0) + (z-0)*(z-0)) / width);
+						if(less > 150) { less = 150; }
+						thickness += less;
+
+						double ovar32 = clamp(getNoise(8, x + (layer * 2000), z + (layer * 2000), 50, 50, 0));
+						int lowerBound = (int) (ovar32 * (seaLevel / 2)) + 20 + (layer * 45) + thickness;
+
+						boolean flagSand = noiseGen3.sample(x + (layer * 2000F), z + (layer * 2000F)) > 52D + (less / 3D); 
+						boolean flagGravel = noiseGen11.sample(x + (layer * 2000F), z + (layer * 2000F)) > 62D + (less / 3D); 
+
+						for (int y = 0; y < 256; y++)
+						{
+							posMutable.setY(y);
+
+							BlockState toSet = AIR;
+							if(y == upperBound)
+							{
+								if(flagGravel)
+								{
+									toSet = GRAVEL;
+								}
+								else if(flagSand)
+								{
+									toSet = SAND;
+								}
+								else if(y > lowerBound)
+								{
+									toSet = STONE;
+								}
+							}
+							else if (y > lowerBound && y < upperBound)
+							{
+								toSet = STONE;
+							}
+							chunk.setBlockState(posMutable, toSet, false);
+						}
+					}	
 				}
 			}
 		}
-		*/ 
 	}
-	
-	@Override
-	public void buildSurface(Chunk chunk) {
-		ChunkPos chunkPos = chunk.getPos();
-		this.generateTerrain(chunk, chunkPos.x, chunkPos.z);
+
+	private double clamp(double input) {
+		if (input > 1.0D) {
+			return 1.0D;
+		} if (input < -1.0D) {
+			return -1.0D;
+		}
+		return input;
+	}
+
+	private double getNoise(int level, int x, int y, double xfact, double yfact, double zstart) {
+		double result = 0;
+		for (double l = 1; l <= level*level; l *= 2) {
+			result += perlin.sample((x / xfact) * l, (y / yfact) * l) / l;
+		}
+		return result; 
 	}
 
 	// Code to port to 1.14.4 from 1.7.10
 	// Do I even want to stream this lol
-	// for some reason discord isn't detecting that I have minecraft running
 	public void generateTerrain(Chunk chunk, int chunkX, int chunkZ)
 	{		
 		final int seaLevel = 64;
 
 		int startX = chunkX << 4;
 		int startZ = chunkZ << 4;
-		
+
 		BlockPos.Mutable mutablePos = new BlockPos.Mutable();
 
 		for (int x = startX; x < startX + 16; ++x) {
@@ -201,7 +303,7 @@ public class IndevChunkGenerator extends SurfaceChunkGenerator<IndevChunkGenerat
 				for (int y = 0; y < 256; y++) {
 					mutablePos.setY(y);
 					BlockState toSet = AIR;
-					
+
 					int beachHeight = seaLevel + 1;
 					if (this.type == Type.PARADISE) {
 						beachHeight = seaLevel + 3;
@@ -267,13 +369,13 @@ public class IndevChunkGenerator extends SurfaceChunkGenerator<IndevChunkGenerat
 					} if (i5 < beachYValue) {
 						i5 = beachYValue;
 					}
-					
+
 					Block toSetBlock = toSet.getBlock();
 					if ((y <= i5) && ((toSetBlock == Blocks.AIR) || (toSetBlock == Blocks.WATER) || (toSetBlock == Blocks.LAVA)))
 					{
-						toSet = Blocks.BRICKS.getDefaultState(); // wtf
+						toSet = Blocks.BRICKS.getDefaultState(); // nvm it's just a pyramid :P
 					}
-					
+
 					chunk.setBlockState(mutablePos, toSet, false);
 				}
 			}	
