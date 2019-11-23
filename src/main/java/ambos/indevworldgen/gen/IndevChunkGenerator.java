@@ -2,6 +2,8 @@ package ambos.indevworldgen.gen;
 
 import java.util.List;
 
+import ambos.indevworldgen.util.noise.IndevNoiseSampler;
+import ambos.indevworldgen.util.noise.OctaveIndevNoiseSampler;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -24,18 +26,43 @@ import net.minecraft.world.gen.chunk.SurfaceChunkGenerator;
 import net.minecraft.world.gen.feature.Feature;
 
 public class IndevChunkGenerator extends SurfaceChunkGenerator<IndevChunkGeneratorConfig> {
-	
+
 	public static enum Type {
 		ISLAND,
 		WOODS,
 		FLOATING,
-		INLAND
+		INLAND,
+		PARADISE,
+		HELL
 	}
-	
+
 	public final Type type = Type.INLAND;
-	
+	private final int size = 6; // the original mod changed this based on type
+
+	// I'm porting code from another mod back in 1.7.10
+	private OctaveIndevNoiseSampler noiseGen1;
+	private OctaveIndevNoiseSampler noiseGen2;
+	private OctaveIndevNoiseSampler noiseGen3;
+	private OctaveIndevNoiseSampler noiseGen4;
+	public OctaveIndevNoiseSampler mainNoiseSampler;
+	public OctaveIndevNoiseSampler noiseGen6;
+	public OctaveIndevNoiseSampler noiseGen10;
+	public OctaveIndevNoiseSampler noiseGen11;
+	public IndevNoiseSampler perlinGen1;
+
 	public IndevChunkGenerator(IWorld world, BiomeSource biomeSource, IndevChunkGeneratorConfig chunkGeneratorConfig) {
 		super(world, biomeSource, 4, 8, 256, chunkGeneratorConfig, true);
+
+		this.noiseGen1 = new OctaveIndevNoiseSampler(this.random, 16);
+		this.noiseGen2 = new OctaveIndevNoiseSampler(this.random, 16);
+		this.noiseGen3 = new OctaveIndevNoiseSampler(this.random, 8);
+		this.noiseGen4 = new OctaveIndevNoiseSampler(this.random, 4);
+		this.mainNoiseSampler = new OctaveIndevNoiseSampler(this.random, 4);
+		this.noiseGen6 = new OctaveIndevNoiseSampler(this.random, 5);
+		this.noiseGen10 = new OctaveIndevNoiseSampler(this.random, 6);
+		this.noiseGen11 = new OctaveIndevNoiseSampler(this.random, 8);
+		this.perlinGen1 = new IndevNoiseSampler(this.random);
+
 		this.random.consume(2620);
 	}
 
@@ -49,25 +76,14 @@ public class IndevChunkGenerator extends SurfaceChunkGenerator<IndevChunkGenerat
 		SpawnHelper.populateEntities(region, biome, centreX, centreZ, rand);
 	}
 
-	public void populateNoise(IWorld world, Chunk chunk) {
-		BlockPos.Mutable pos = new BlockPos.Mutable();
-		for (int localX = 0; localX < 16; ++localX) {
-			pos.setX(localX);
-			for (int localZ = 0; localZ < 16; ++localZ) {
-				pos.setZ(localZ);
-				for (int y = 255; y >= 0; y--) {
-					pos.setY(y);
-					chunk.setBlockState(pos, y < 66 ? Blocks.STONE.getDefaultState() : Blocks.AIR.getDefaultState(), false);
-				}
-			}
-		}
-	}
-
 	private static final BlockState AIR = Blocks.AIR.getDefaultState();
 	private static final BlockState STONE = Blocks.STONE.getDefaultState();
-	private static final BlockState GRASS = Blocks.STONE.getDefaultState();
-	private static final BlockState DIRT = Blocks.STONE.getDefaultState();
-
+	private static final BlockState GRASS = Blocks.GRASS_BLOCK.getDefaultState();
+	private static final BlockState DIRT = Blocks.DIRT.getDefaultState();
+	private static final BlockState GRAVEL = Blocks.GRAVEL.getDefaultState();
+	private static final BlockState SAND = Blocks.SAND.getDefaultState();
+	
+	// Should probably put this in build surface
 	public void generateSurfaceBlocks(int startX, int startZ, Chunk chunk) {
 		BlockPos.Mutable pos = new BlockPos.Mutable();
 
@@ -102,198 +118,172 @@ public class IndevChunkGenerator extends SurfaceChunkGenerator<IndevChunkGenerat
 			}
 		}
 	}
+	
+	@Override
+	public void populateNoise(IWorld world, Chunk chunk) {
+		//ChunkPos chunkPos = chunk.getPos();
+		//this.generateTerrain(chunk, chunkPos.x, chunkPos.z);
+		/*
+		BlockPos.Mutable pos = new BlockPos.Mutable();
 
-	/*
-	public void generateTerrain(int par1, int par2, Block[] ba, byte[] bm)
+		for (int localX = 0; localX < 16; ++localX) {
+			pos.setX(localX);
+			for (int localZ = 0; localZ < 16; ++localZ) {
+				pos.setZ(localZ);
+				for (int y = 255; y >= 0; y--) {
+					pos.setY(y);
+					chunk.setBlockState(pos, y < 66 ? Blocks.STONE.getDefaultState() : Blocks.AIR.getDefaultState(), false);
+				}
+			}
+		}
+		*/ 
+	}
+	
+	@Override
+	public void buildSurface(Chunk chunk) {
+		ChunkPos chunkPos = chunk.getPos();
+		this.generateTerrain(chunk, chunkPos.x, chunkPos.z);
+	}
+
+	// Code to port to 1.14.4 from 1.7.10
+	// Do I even want to stream this lol
+	// for some reason discord isn't detecting that I have minecraft running
+	public void generateTerrain(Chunk chunk, int chunkX, int chunkZ)
 	{		
-		int height = 128;
-		int seaLevel = 64;
-		int i = par1 << 4;
-		int j = par2 << 4;
-		int jj = 0;
-		int lx = 0; int lz = 0;
+		final int seaLevel = 64;
 
-		for (int k = i; k < i + 16; k++)
-		{
-			for (int m = j; m < j + 16; m++)
-			{
-				int n = k / 1024;
-				int i1 = m / 1024;
+		int startX = chunkX << 4;
+		int startZ = chunkZ << 4;
+		
+		BlockPos.Mutable mutablePos = new BlockPos.Mutable();
 
-				int i2 = 64;
-				if(this.type == Type.ISLAND)
-				{
-					float f2 = (float)this.noiseGen5.a(k / 4.0F, m / 4.0F);
-					i2 = 74 - ((int) Math.floor(Math.sqrt((0D-k)*(0D-k) + (0D-m)*(0D-m)) / (double) size));
-					if(i2 < 50) { i2 = 50; }
-					i2 += ((int) f2);
-				}
-				else
-				{
-					float f1 = (float)(this.noiseGen1.a(k / 0.03125F, 0.0D, m / 0.03125F) - this.noiseGen2.a(k / 0.015625F, 0.0D, m / 0.015625F)) / 512.0F / 4.0F;
-					float f2 = (float)this.noiseGen5.a(k / 4.0F, m / 4.0F);
-					float f3 = (float)this.noiseGen6.a(k / 8.0F, m / 8.0F) / 8.0F;
-					f2 = f2 > 0.0F ? (float)(this.noiseGen3.a(k * 0.2571428F * 2.0F, m * 0.2571428F * 2.0F) * f3 / 4.0D) : (float)(this.noiseGen4.a(k * 0.2571428F, m * 0.2571428F) * f3);
-					i2 = (int)(f1 + 64.0F + f2);
+		for (int x = startX; x < startX + 16; ++x) {
+			mutablePos.setX(x & 15);
+			for (int z = startZ; z < startZ + 16; ++z) {
+				mutablePos.setZ(z & 15);
+				int n = x / 1024;
+				int i1 = z / 1024;
+
+				int beachYValue = 64;
+				if(this.type == Type.ISLAND) {
+					float f2 = (float)this.mainNoiseSampler.sample(x / 4.0F, z / 4.0F);
+					beachYValue = 74 - ((int) Math.floor(Math.sqrt((0D-x)*(0D-x) + (0D-z)*(0D-z)) / (double) size));
+					if(beachYValue < 50) { beachYValue = 50; }
+					beachYValue += ((int) f2);
+				} else {
+					float f1 = (float)(this.noiseGen1.sample(x / 0.03125F, 0.0D, z / 0.03125F) - this.noiseGen2.sample(x / 0.015625F, 0.0D, z / 0.015625F)) / 512.0F / 4.0F;
+					float f2 = (float)this.mainNoiseSampler.sample(x / 4.0F, z / 4.0F);
+					float f3 = (float)this.noiseGen6.sample(x / 8.0F, z / 8.0F) / 8.0F;
+					f2 = f2 > 0.0F ? (float)(this.noiseGen3.sample(x * 0.2571428F * 2.0F, z * 0.2571428F * 2.0F) * f3 / 4.0D) : (float)(this.noiseGen4.sample(x * 0.2571428F, z * 0.2571428F) * f3);
+					beachYValue = (int)(f1 + 64.0F + f2);
 				}
 
-				if ((float)this.noiseGen5.a(k, m) < 0.0F)
-				{
-					i2 = i2 / 2 << 1;
-					if ((float)this.noiseGen5.a(k / 5, m / 5) < 0.0F)
-					{
-						i2++;
+				if ((float)this.mainNoiseSampler.sample(x, z) < 0.0F) {
+					beachYValue = beachYValue / 2 << 1;
+					if ((float)this.mainNoiseSampler.sample(x / 5, z / 5) < 0.0F) {
+						beachYValue++;
 					}	
 				}
 
-				//BEACH SETTINGS
-				boolean flagSand = noiseGen3.a(k, m) > 8D;
-				boolean flagGravel = noiseGen11.a(k, m) > 18D;
-				if(themePARADISE)
-				{ 
-					flagSand = noiseGen3.a(k, m) > -32D; 
-				}
-				else if(themeHELL || themeWOODS)
-				{ 
-					flagSand = noiseGen3.a(k, m) > -8D; 
+				boolean flagSand = noiseGen3.sample(x, z) > 8D;
+				boolean flagGravel = noiseGen11.sample(x, z) > 18D;
+				if(this.type == Type.PARADISE) { 
+					flagSand = noiseGen3.sample(x, z) > -32D; 
+				} else if(this.type == Type.HELL || this.type == Type.WOODS) { 
+					flagSand = noiseGen3.sample(x, z) > -8D; 
 				}
 
-				if(typeIsland)
-				{
+				if(this.type == Type.ISLAND) {
 					flagSand = true;
 				}
 
-				//CREATE WORLD
-				for (int i3 = 0; i3 < 256; i3++)
-				{
-					Block i4 = Blocks.air;
-					int i4m = 0;
+				// oh no time to port old 1.7 world gen
+				for (int y = 0; y < 256; y++) {
+					mutablePos.setY(y);
+					BlockState toSet = AIR;
+					
 					int beachHeight = seaLevel + 1;
-					if(themePARADISE){ beachHeight = seaLevel + 3; }
-
-					//GENERATE BEDROCK
-					if(i3 == 0)
-					{
-						i4 = Blocks.bedrock;
+					if (this.type == Type.PARADISE) {
+						beachHeight = seaLevel + 3;
 					}
 
-					//GENERATE GRASS
-					else if ((i3 == i2) && i2 >= beachHeight) 
-					{
-						if(themeHELL)
+					if (y == 0) {
+						toSet = Blocks.BEDROCK.getDefaultState();
+					} else if ((y == beachYValue) && beachYValue >= beachHeight)  {
+						if(this.type == Type.HELL)
 						{
-							i4 = Blocks.dirt;
-							i4m = 1;
+							toSet = Blocks.COARSE_DIRT.getDefaultState();
 						}
 						else
 						{
-							i4 = Blocks.grass;
+							toSet = GRASS;
 						}	
-					}
-
-					//BEACH GEN
-					else if (i3 == i2)
-					{
-						if(flagGravel)
-						{
-							i4 = Blocks.gravel;
-							if(themeHELL)
-							{
-								i4 = Blocks.grass;
+					} else if (y == beachYValue) { // beach
+						if(flagGravel) {
+							toSet = GRAVEL;
+							if(this.type == Type.HELL) {
+								toSet = GRASS;
 							}
-						}
-						else if(flagSand)
-						{
-							i4 = Blocks.sand;
-							if(themeHELL)
-							{
-								i4 = Blocks.grass;
+						} else if(flagSand) {
+							toSet = SAND;
+							if(this.type == Type.HELL) {
+								toSet = GRASS;
 							}
+						} else if (beachYValue > seaLevel - 1) {
+							toSet = GRASS;
+						} else {
+							toSet = DIRT;
 						}
-						else if (i2 > seaLevel - 1)
-						{
-							i4 = Blocks.grass;
-						}
-						else
-						{
-							i4 = Blocks.dirt;
-						}
-					}
-
-					//GENERATE STONE
-					else if (i3 <= i2 - 2)
-					{
-						i4 = Blocks.stone;
-					}
-
-					//GENERATE DIRT
-					else if (i3 < i2)
-					{
-						i4 = Blocks.dirt;
-					}
-
-					//GENERATE LIQUIDS
-					else if (i3 <= 64 && !typeFloating)
-					{
-						if(themeHELL)
-						{
-							if (i3 == 64)
-							{
-								i4 = Blocks.flowing_lava;
+					} else if (y <= beachYValue - 2) {
+						toSet = STONE;
+					} else if (y < beachYValue) {
+						toSet = DIRT;
+					} else if (y <= 64 && !(this.type == Type.FLOATING)) {
+						if(this.type == Type.HELL) {
+							if (y == 64) {
+								toSet = Blocks.LAVA.getDefaultState(); // hopefully this is fine
+								// should be flowing
+							} else {
+								toSet = Blocks.LAVA.getDefaultState();
 							}
-							else
-							{
-								i4 = Blocks.lava;
-							}
-						}
-						else
-						{
-							i4 = Blocks.water;
+						} else {
+							toSet = Blocks.WATER.getDefaultState();
 						}	
 					}	
 
-					rand.setSeed(n + i1 * 13871);
-					int i5 = (n << 10) + 128 + rand.nextInt(512);
-					int i6 = (i1 << 10) + 128 + rand.nextInt(512);
-					i5 = k - i5;
-					int i7 = m - i6;
-					if (i5 < 0)
-					{
+					random.setSeed(n + i1 * 13871);
+					int i5 = (n << 10) + 128 + random.nextInt(512);
+					int i6 = (i1 << 10) + 128 + random.nextInt(512);
+					i5 = x - i5;
+					int i7 = z - i6;
+					if (i5 < 0) {
 						i5 = -i5;
-					}	
-					if (i7 < 0)
-					{
+					} if (i7 < 0) {
 						i7 = -i7;
-					}
-					if (i7 > i5)
-					{
+					} if (i7 > i5) {
 						i5 = i7;
-					}	
-					if ((i5 = 127 - i5) == 255)
-					{
+					} if ((i5 = 127 - i5) == 255) {
 						i5 = 1;
-					}	
-					if (i5 < i2)
+					} if (i5 < beachYValue) {
+						i5 = beachYValue;
+					}
+					
+					Block toSetBlock = toSet.getBlock();
+					if ((y <= i5) && ((toSetBlock == Blocks.AIR) || (toSetBlock == Blocks.WATER) || (toSetBlock == Blocks.LAVA)))
 					{
-						i5 = i2;
-					}	
-					if ((i3 <= i5) && ((i4 == Blocks.air) || (i4 == Blocks.water) || (i4 == Blocks.lava)))
-					{
-						i4 = Blocks.brick_block;
-					} 
-
-					ba[jj] = i4;
-					bm[jj] = (byte)i4m;
-					jj++;
+						toSet = Blocks.BRICKS.getDefaultState(); // wtf
+					}
+					
+					chunk.setBlockState(mutablePos, toSet, false);
 				}
 			}	
 		}
 	}
-	*/
-	
+	//*/
+
 	@Override
 	public int getSeaLevel() {
-		return 62;
+		return 64;
 	}
 
 	// overworld behaviour
