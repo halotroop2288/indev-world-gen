@@ -2,11 +2,11 @@ package ambos.indevworldgen.gen.biomesource;
 
 public interface HeightRetriever {
 	int getHeight(int x, int z);
-	int getSeaLevelForGen();
+	int getSeaLevelForBiomeGen();
 	
 	static HeightRetriever NONE = new HeightRetriever() {
 		@Override
-		public int getSeaLevelForGen() {
+		public int getSeaLevelForBiomeGen() {
 			return 64;
 		}
 		@Override

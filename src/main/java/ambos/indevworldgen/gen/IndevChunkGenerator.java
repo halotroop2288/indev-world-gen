@@ -2,6 +2,8 @@ package ambos.indevworldgen.gen;
 
 import java.util.List;
 
+import ambos.indevworldgen.gen.biomesource.HeightRetriever;
+import ambos.indevworldgen.gen.biomesource.OldBiomeSource;
 import ambos.indevworldgen.util.noise.IndevNoiseSampler;
 import ambos.indevworldgen.util.noise.OctaveIndevNoiseSampler;
 import net.minecraft.block.Block;
@@ -20,13 +22,13 @@ import net.minecraft.world.biome.source.BiomeSource;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.gen.CatSpawner;
 import net.minecraft.world.gen.ChunkRandom;
+import net.minecraft.world.gen.GenerationStep.Carver;
 import net.minecraft.world.gen.PhantomSpawner;
 import net.minecraft.world.gen.PillagerSpawner;
-import net.minecraft.world.gen.GenerationStep.Carver;
 import net.minecraft.world.gen.chunk.SurfaceChunkGenerator;
 import net.minecraft.world.gen.feature.Feature;
 
-public class IndevChunkGenerator extends SurfaceChunkGenerator<IndevChunkGeneratorConfig> {
+public class IndevChunkGenerator extends SurfaceChunkGenerator<IndevChunkGeneratorConfig> implements HeightRetriever {
 
 	public static enum Type {
 		ISLAND,
@@ -67,8 +69,12 @@ public class IndevChunkGenerator extends SurfaceChunkGenerator<IndevChunkGenerat
 		this.perlin = new IndevNoiseSampler(this.random);
 
 		type = config.getType();
-		
+
 		this.size = type == Type.FLOATING ? 12 : 7;
+		
+		if (biomeSource instanceof OldBiomeSource) {
+			((OldBiomeSource) biomeSource).setHeightRetriever(this);
+		}
 
 		this.random.consume(2620);
 	}
@@ -142,7 +148,7 @@ public class IndevChunkGenerator extends SurfaceChunkGenerator<IndevChunkGenerat
 			}
 		}
 	}
-	
+
 	@Override
 	public void carve(Chunk chunk, Carver carverStep) {
 		if (this.type != Type.FLOATING) {
@@ -430,5 +436,91 @@ public class IndevChunkGenerator extends SurfaceChunkGenerator<IndevChunkGenerat
 	@Override
 	protected double[] computeNoiseRange(int x, int z) {
 		return new double[] {0.1f, 0.1f}; 
+	}
+
+	@Override
+	public int getHeight(int x, int z) {
+		int maxGroundY = 0;
+
+		final int seaLevel = 64;
+
+		int n = x / 1024;
+		int i1 = z / 1024;
+
+		int beachYValue = 64;
+		if(this.type == Type.ISLAND) {
+			float f2 = (float)this.mainNoiseSampler.sample(x / 4.0F, z / 4.0F);
+			beachYValue = 74 - ((int) Math.floor(Math.sqrt((0D-x)*(0D-x) + (0D-z)*(0D-z)) / (double) size));
+			if(beachYValue < 50) { beachYValue = 50; }
+			beachYValue += ((int) f2);
+		} else {
+			float f1 = (float)(this.noiseGen1.sample(x / 0.03125F, 0.0D, z / 0.03125F) - this.noiseGen2.sample(x / 0.015625F, 0.0D, z / 0.015625F)) / 512.0F / 4.0F;
+			float f2 = (float)this.mainNoiseSampler.sample(x / 4.0F, z / 4.0F);
+			float f3 = (float)this.noiseGen6.sample(x / 8.0F, z / 8.0F) / 8.0F;
+			f2 = f2 > 0.0F ? (float)(this.noiseGen3.sample(x * 0.2571428F * 2.0F, z * 0.2571428F * 2.0F) * f3 / 4.0D) : (float)(this.noiseGen4.sample(x * 0.2571428F, z * 0.2571428F) * f3);
+			beachYValue = (int)(f1 + 64.0F + f2);
+		}
+
+		if ((float)this.mainNoiseSampler.sample(x, z) < 0.0F) {
+			beachYValue = beachYValue / 2 << 1;
+			if ((float)this.mainNoiseSampler.sample(x / 5, z / 5) < 0.0F) {
+				beachYValue++;
+			}	
+		}
+
+		for (int y = 0; y < 128; y++) {
+			boolean setSolidBlock = false;
+
+			int beachHeight = seaLevel + 1;
+			if (this.type == Type.PARADISE) {
+				beachHeight = seaLevel + 3;
+			}
+
+			if (y == 0) {
+				setSolidBlock = true;
+			} else if ((y == beachYValue) && beachYValue >= beachHeight)  {
+				setSolidBlock = true;
+			} else if (y == beachYValue) { // beach
+				setSolidBlock = true;
+			} else if (y <= beachYValue - 2) {
+				setSolidBlock = true;
+			} else if (y < beachYValue) {
+				setSolidBlock = true;
+			} else if (y <= 64 && !(this.type == Type.FLOATING)) {
+				setSolidBlock = false;
+			}	
+
+			random.setSeed(n + i1 * 13871);
+			int i5 = (n << 10) + 128 + random.nextInt(512);
+			int i6 = (i1 << 10) + 128 + random.nextInt(512);
+			i5 = x - i5;
+			int i7 = z - i6;
+			if (i5 < 0) {
+				i5 = -i5;
+			} if (i7 < 0) {
+				i7 = -i7;
+			} if (i7 > i5) {
+				i5 = i7;
+			} if ((i5 = 127 - i5) == 255) {
+				i5 = 1;
+			} if (i5 < beachYValue) {
+				i5 = beachYValue;
+			}
+
+			if ((y <= i5) && (!setSolidBlock)) {
+				setSolidBlock = true;
+			}
+
+			if (setSolidBlock) {
+				maxGroundY = y;
+			}
+		}
+
+		return maxGroundY;
+	}
+
+	@Override
+	public int getSeaLevelForBiomeGen() {
+		return 64;
 	}
 }

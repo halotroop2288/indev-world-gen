@@ -462,7 +462,7 @@ public class AlphaChunkGenerator extends SurfaceChunkGenerator<AlphaChunkGenerat
 	}
 
 	@Override
-	public int getSeaLevelForGen() {
+	public int getSeaLevelForBiomeGen() {
 		return 64;
 	}
 }

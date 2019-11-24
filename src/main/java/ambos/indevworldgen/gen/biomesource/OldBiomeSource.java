@@ -34,7 +34,7 @@ public class OldBiomeSource extends BiomeSource {
 
 	@Override
 	public Biome getBiome(int x, int z) {
-		if (parent.getHeight(x, z) < parent.getSeaLevelForGen()) {
+		if (parent.getHeight(x, z) < parent.getSeaLevelForBiomeGen()) {
 			return this.oceanSampler.sample(x, z);
 		} else {
 			return this.landSampler.sample(x, z);
@@ -43,7 +43,7 @@ public class OldBiomeSource extends BiomeSource {
 
 	@Override
 	public Biome[] sampleBiomes(int x, int z, int width, int height, boolean flag) {
-		if (parent.getHeight(x, z) < parent.getSeaLevelForGen()) {
+		if (parent.getHeight(x, z) < parent.getSeaLevelForBiomeGen()) {
 			return this.oceanSampler.sample(x, z, width, height);
 		} else {
 			return this.landSampler.sample(x, z, width, height);
