@@ -66,9 +66,15 @@ public class IndevHouseGenerator {
         @Override
         public boolean generate(IWorld iWorld_1, Random random_1, MutableIntBoundingBox mutableIntBoundingBox_1, ChunkPos chunkPos_1)
         {
+            ChunkPos chunkPos_2 = new ChunkPos(iWorld_1.getSpawnPos()); // Get spawn chunk pos.
+
             int yHeight = iWorld_1.getTop(Heightmap.Type.WORLD_SURFACE_WG, this.pos.getX() + 8, this.pos.getZ() + 8);
             this.pos = this.pos.add(0, yHeight - 1, 0);
-            return  super.generate(iWorld_1, random_1, mutableIntBoundingBox_1, chunkPos_1);
+
+            if (chunkPos_1.getStartX() == chunkPos_2.getStartX() && chunkPos_1.getStartZ() == chunkPos_2.getStartZ())
+                return  super.generate(iWorld_1, random_1, mutableIntBoundingBox_1, chunkPos_1);
+
+            return false;
         }
     }
 }

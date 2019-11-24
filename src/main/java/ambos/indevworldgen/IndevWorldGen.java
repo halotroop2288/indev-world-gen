@@ -34,7 +34,7 @@ public class IndevWorldGen implements ModInitializer {
 		
 		INSTANCE = Registry.register(Registry.CHUNK_GENERATOR_TYPE, IndevWorldGen.id("old_indev"), new IndevChunkGeneratorType(false, () -> new IndevChunkGeneratorConfig()));
 
-		Feature.STRUCTURES.put("My Awesome Feature", indevHouseFeature);
+		Feature.STRUCTURES.put("Indev House Feature", indevHouseFeature);
 
 		for(Biome biome : Registry.BIOME)
 		{

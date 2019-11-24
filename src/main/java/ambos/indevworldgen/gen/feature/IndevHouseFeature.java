@@ -1,6 +1,7 @@
 package ambos.indevworldgen.gen.feature;
 
 import ambos.indevworldgen.IndevWorldGen;
+import ambos.indevworldgen.gen.IndevChunkGenerator;
 import ambos.indevworldgen.structure.IndevHouseGenerator;
 import net.minecraft.structure.StructureManager;
 import net.minecraft.structure.StructureStart;
@@ -48,7 +49,7 @@ public class IndevHouseFeature extends AbstractTempleFeature<DefaultFeatureConfi
     @Override
     public boolean shouldStartAt(ChunkGenerator<?> chunkGenerator_1, Random random_1, int int_1, int int_2)
     {
-        return true;
+        return chunkGenerator_1 instanceof IndevChunkGenerator;
     }
 
     public static class IndevHouseStart extends StructureStart
