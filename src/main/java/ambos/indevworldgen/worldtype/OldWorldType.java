@@ -7,8 +7,11 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import ambos.indevworldgen.IndevWorldGen;
+import ambos.indevworldgen.gen.AlphaChunkGenerator;
+import ambos.indevworldgen.gen.AlphaChunkGeneratorConfig;
 import ambos.indevworldgen.gen.IndevChunkGenerator;
 import ambos.indevworldgen.gen.IndevChunkGeneratorConfig;
+import ambos.indevworldgen.gen.biomesource.OldBiomeSource;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.Biomes;
 import net.minecraft.world.biome.source.BiomeSourceType;
@@ -85,6 +88,12 @@ public class OldWorldType<T extends ChunkGenerator<?>> {
 		chunkGenConfig.setType(IndevChunkGenerator.Type.PARADISE);
 		return IndevWorldGen.INDEV_CGT.create(world, BiomeSourceType.VANILLA_LAYERED.applyConfig(biomeSourceConfig), chunkGenConfig);
 	});
+	
+	public static final OldWorldType<AlphaChunkGenerator> ALPHA = new OldWorldType<>("old_alpha", (world) -> {
+		AlphaChunkGeneratorConfig chunkGenConfig = new AlphaChunkGeneratorConfig();
+		
+		return IndevWorldGen.ALPHA_CGT.create(world, new OldBiomeSource(world.getSeed(), chunkGenConfig), chunkGenConfig);
+	});
 	// ===========================================================
 	// ideally they would be the settings of the same world type
 	// but idk how to do world type settings screens
@@ -92,4 +101,11 @@ public class OldWorldType<T extends ChunkGenerator<?>> {
 	public static interface WorldTypeChunkGeneratorFactory<T extends ChunkGenerator<?>> {
 		T create(World world);
 	}
+	
+	/*
+	 * AlphaChunkGeneratorConfig chunkGenConfig = new AlphaChunkGeneratorConfig();
+		VanillaLayeredBiomeSourceConfig biomeSourceConfig = BiomeSourceType.VANILLA_LAYERED.getConfig().setLevelProperties(world.getLevelProperties()).setGeneratorSettings(chunkGenConfig);
+		
+		return IndevWorldGen.ALPHA_CGT.create(world, BiomeSourceType.VANILLA_LAYERED.applyConfig(biomeSourceConfig), chunkGenConfig);
+	 */
 }

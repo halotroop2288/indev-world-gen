@@ -3,13 +3,15 @@ package ambos.indevworldgen.gen;
 import java.util.List;
 import java.util.Random;
 
+import ambos.indevworldgen.gen.biomesource.HeightRetriever;
+import ambos.indevworldgen.gen.biomesource.OldBiomeSource;
 import ambos.indevworldgen.util.noise.OctaveAlphaNoiseSampler;
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.EntityCategory;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
 import net.minecraft.village.ZombieSiegeManager;
 import net.minecraft.world.ChunkRegion;
 import net.minecraft.world.IWorld;
@@ -24,23 +26,21 @@ import net.minecraft.world.gen.PillagerSpawner;
 import net.minecraft.world.gen.chunk.SurfaceChunkGenerator;
 import net.minecraft.world.gen.feature.Feature;
 
-public class AlphaChunkGenerator extends SurfaceChunkGenerator<AlphaChunkGeneratorConfig> {
-
+public class AlphaChunkGenerator extends SurfaceChunkGenerator<AlphaChunkGeneratorConfig> implements HeightRetriever {
 	private OctaveAlphaNoiseSampler noise1;
 	private OctaveAlphaNoiseSampler noise2;
 	private OctaveAlphaNoiseSampler noise3;
-	private OctaveAlphaNoiseSampler noise4;
-	private OctaveAlphaNoiseSampler noise5;
+	private OctaveAlphaNoiseSampler beachNoise;
+	private OctaveAlphaNoiseSampler surfaceNoise;
 	public OctaveAlphaNoiseSampler noise6;
 	public OctaveAlphaNoiseSampler noise7;
 	public OctaveAlphaNoiseSampler noise8;
 
-	private Random rand2;
-
-	private double field_4180_q[];
-	private double field_905_r[];
-    private double field_904_s[];
-    private double field_903_t[];
+	private double[] heightNoise;
+	private double[] noiseArray1, noiseArray2, noiseArray3, noiseArray4, noiseArray5;
+	private double[] sandSample = new double[256];
+	private double[] gravelSample = new double[256];
+	private double[] stoneNoise = new double[256];
 
 	public AlphaChunkGenerator(IWorld world, BiomeSource biomeSource, AlphaChunkGeneratorConfig config) {
 		super(world, biomeSource, 4, 8, 256, config, true);
@@ -48,15 +48,17 @@ public class AlphaChunkGenerator extends SurfaceChunkGenerator<AlphaChunkGenerat
 		noise1 = new OctaveAlphaNoiseSampler(this.random, 16);
 		noise2 = new OctaveAlphaNoiseSampler(this.random, 16);
 		noise3 = new OctaveAlphaNoiseSampler(this.random, 8);
-		noise4 = new OctaveAlphaNoiseSampler(this.random, 4);
-		noise5 = new OctaveAlphaNoiseSampler(this.random, 4);
+		beachNoise = new OctaveAlphaNoiseSampler(this.random, 4);
+		surfaceNoise = new OctaveAlphaNoiseSampler(this.random, 4);
 		noise6 = new OctaveAlphaNoiseSampler(this.random, 10);
 		noise7 = new OctaveAlphaNoiseSampler(this.random, 16);
 		noise8 = new OctaveAlphaNoiseSampler(this.random, 8);
 
-		rand2 = new Random(world.getSeed());
-
 		this.random.consume(2620);
+
+		if (biomeSource instanceof OldBiomeSource) {
+			((OldBiomeSource) biomeSource).setHeightRetriever(this);
+		}
 	}
 
 	@Override
@@ -78,230 +80,254 @@ public class AlphaChunkGenerator extends SurfaceChunkGenerator<AlphaChunkGenerat
 
 	@Override
 	public void populateNoise(IWorld world, Chunk chunk) {
+		int chunkX = chunk.getPos().x;
+		int chunkZ = chunk.getPos().z;
+		final double oneEighth = 0.125D;
+		final double oneQuarter = 0.25D;
+		this.heightNoise = this.generateOctaves(this.heightNoise, chunkX * 4, 0, chunkZ * 4, 5, 17, 5);
 
-	}
-/*
-	private double[] initializeNoiseField(double ad[], int i, int j, int k, int l, int i1, int j1) {
-		if(ad == null) {
-			ad = new double[l * i1 * j1];
-		}
-		double d = 684.41200000000003D;
-		double d1 = 684.41200000000003D;
-		double ad1[] = ManagerOWG.temperature;
-		double ad2[] = ManagerOWG.humidity;
+		BlockPos.Mutable posMutable = new BlockPos.Mutable();
 
-		field_4182_g = field_922_a.func_4109_a(field_4182_g, i, k, l, j1, 1.121D, 1.121D, 0.5D);
-		field_4181_h = field_921_b.func_4109_a(field_4181_h, i, k, l, j1, 200D, 200D, 0.5D);
-		field_4185_d = field_910_m.func_807_a(field_4185_d, i, j, k, l, i1, j1, d / 80D, d1 / 160D, d / 80D);
-		field_4184_e = field_912_k.func_807_a(field_4184_e, i, j, k, l, i1, j1, d, d1, d);
-		field_4183_f = field_911_l.func_807_a(field_4183_f, i, j, k, l, i1, j1, d, d1, d);
-		int k1 = 0;
-		int l1 = 0;
-		int i2 = 16 / l;
-		for(int j2 = 0; j2 < l; j2++)
-		{
-			int k2 = j2 * i2 + i2 / 2;
-			for(int l2 = 0; l2 < j1; l2++)
-			{
-				int i3 = l2 * i2 + i2 / 2;
-				double d2 = ad1[k2 * 16 + i3];
-				double d3 = ad2[k2 * 16 + i3] * d2;
-				double d4 = 1.0D - d3;
-				d4 *= d4;
-				d4 *= d4;
-				d4 = 1.0D - d4;
-				double d5 = (field_4182_g[l1] + 256D) / 512D;
-				d5 *= d4;
-				if(d5 > 1.0D)
-				{
-					d5 = 1.0D;
-				}
-				double d6 = field_4181_h[l1] / 8000D;
-				if(d6 < 0.0D)
-				{
-					d6 = -d6 * 0.29999999999999999D;
-				}
-				d6 = d6 * 3D - 2D;
-				if(d6 < 0.0D)
-				{
-					d6 /= 2D;
-					if(d6 < -1D)
-					{
-						d6 = -1D;
-					}
-					d6 /= 1.3999999999999999D;
-					d6 /= 2D;
-					d5 = 0.0D;
-				} else
-				{
-					if(d6 > 1.0D)
-					{
-						d6 = 1.0D;
-					}
-					d6 /= 8D;
-				}
-				if(d5 < 0.0D)
-				{
-					d5 = 0.0D;
-				}
-				d5 += 0.5D;
-				d6 = (d6 * (double)i1) / 16D;
-				double d7 = (double)i1 / 2D + d6 * 4D;
-				l1++;
-				for(int j3 = 0; j3 < i1; j3++)
-				{
-					double d8 = 0.0D;
-					double d9 = (((double)j3 - d7) * 12D) / d5;
-					if(d9 < 0.0D)
-					{
-						d9 *= 4D;
-					}
-					double d10 = field_4184_e[k1] / 512D;
-					double d11 = field_4183_f[k1] / 512D;
-					double d12 = (field_4185_d[k1] / 10D + 1.0D) / 2D;
-					if(d12 < 0.0D)
-					{
-						d8 = d10;
-					} else
-						if(d12 > 1.0D)
-						{
-							d8 = d11;
-						} else
-						{
-							d8 = d10 + (d11 - d10) * d12;
-						}
-					d8 -= d9;
-					if(j3 > i1 - 4)
-					{
-						double d13 = (float)(j3 - (i1 - 4)) / 3F;
-						d8 = d8 * (1.0D - d13) + -10D * d13;
-					}
-					ad[k1] = d8;
-					k1++;
-				}
+		for (int xSubChunk = 0; xSubChunk < 4; ++xSubChunk) {
+			for (int zSubChunk = 0; zSubChunk < 4; ++zSubChunk) {
+				for (int ySubChunk = 0; ySubChunk < 16; ++ySubChunk) {
 
-			}
+					double sampleNWLow = this.heightNoise[(xSubChunk * 5 + zSubChunk) * 17 + ySubChunk];
+					double sampleSWLow = this.heightNoise[((xSubChunk) * 5 + zSubChunk + 1) * 17 + ySubChunk];
+					double sampleNELow = this.heightNoise[((xSubChunk + 1) * 5 + zSubChunk) * 17 + ySubChunk];
+					double sampleSELow = this.heightNoise[((xSubChunk + 1) * 5 + zSubChunk + 1) * 17 + ySubChunk];
 
-		}
+					double sampleNWHigh = (this.heightNoise[((xSubChunk) * 5 + zSubChunk) * 17 + ySubChunk + 1] - sampleNWLow) * oneEighth;
+					double sampleSWHigh = (this.heightNoise[((xSubChunk) * 5 + zSubChunk + 1) * 17 + ySubChunk + 1] - sampleSWLow) * oneEighth;
+					double sampleNEHigh = (this.heightNoise[((xSubChunk + 1) * 5 + zSubChunk) * 17 + ySubChunk + 1] - sampleNELow) * oneEighth;
+					double sampleSEHigh = (this.heightNoise[((xSubChunk + 1) * 5 + zSubChunk + 1) * 17 + ySubChunk + 1] - sampleSELow) * oneEighth;
 
-		return ad;
-	}
-*/ /*
-	public void generateTerrain(int i, int j) {
-		byte byte0 = 4;
-		byte byte1 = 64;
-		int k = byte0 + 1;
-		byte byte2 = 17;
-		int l = byte0 + 1;
-		field_4180_q = initializeNoiseField(field_4180_q, i * byte0, 0, j * byte0, k, byte2, l);
-		for(int i1 = 0; i1 < byte0; i1++)
-		{
-			for(int j1 = 0; j1 < byte0; j1++)
-			{
-				for(int k1 = 0; k1 < 16; k1++)
-				{
-					double d = 0.125D;
-					double d1 = field_4180_q[((i1 + 0) * l + (j1 + 0)) * byte2 + (k1 + 0)];
-					double d2 = field_4180_q[((i1 + 0) * l + (j1 + 1)) * byte2 + (k1 + 0)];
-					double d3 = field_4180_q[((i1 + 1) * l + (j1 + 0)) * byte2 + (k1 + 0)];
-					double d4 = field_4180_q[((i1 + 1) * l + (j1 + 1)) * byte2 + (k1 + 0)];
-					double d5 = (field_4180_q[((i1 + 0) * l + (j1 + 0)) * byte2 + (k1 + 1)] - d1) * d;
-					double d6 = (field_4180_q[((i1 + 0) * l + (j1 + 1)) * byte2 + (k1 + 1)] - d2) * d;
-					double d7 = (field_4180_q[((i1 + 1) * l + (j1 + 0)) * byte2 + (k1 + 1)] - d3) * d;
-					double d8 = (field_4180_q[((i1 + 1) * l + (j1 + 1)) * byte2 + (k1 + 1)] - d4) * d;
-					for(int l1 = 0; l1 < 8; l1++)
-					{
-						double d9 = 0.25D;
-						double d10 = d1;
-						double d11 = d2;
-						double d12 = (d3 - d1) * d9;
-						double d13 = (d4 - d2) * d9;
-						for(int i2 = 0; i2 < 4; i2++)
-						{
-							int j2 = i2 + i1 * 4 << 11 | 0 + j1 * 4 << 7 | k1 * 8 + l1;
-							char c = '\200';
-							double d14 = 0.25D;
-							double d15 = d10;
-							double d16 = (d11 - d10) * d14;
-							for(int k2 = 0; k2 < 4; k2++)
-							{
-								double d17 = ad[(i1 * 4 + i2) * 16 + (j1 * 4 + k2)];
-								Block l2 = Blocks.air;
-								if(k1 * 8 + l1 < byte1)
-								{
-									if(d17 < 0.5D && k1 * 8 + l1 >= byte1 - 1)
-									{
-										l2 = Blocks.ice;
-									} 
-									else
-									{
-										l2 = Blocks.water;
-									}
+					for (int localY = 0; localY < 8; ++localY) {
+						int y = ySubChunk * 8 + localY;
+						posMutable.setY(y);
+
+						double sampleNWInitial = sampleNWLow;
+						double sampleSWInitial = sampleSWLow;
+						double sampleNAverage = (sampleNELow - sampleNWLow) * oneQuarter;
+						double sampleSAverage = (sampleSELow - sampleSWLow) * oneQuarter;
+
+						for (int localX = 0; localX < 4; ++localX) {
+							posMutable.setX(localX + xSubChunk * 4);
+
+							double someValueToDoWithSettingStone = sampleNWInitial;
+							double someOffsetThing = (sampleSWInitial - sampleNWInitial) * oneQuarter;
+
+							for (int localZ = 0; localZ < 4; ++localZ) {
+								posMutable.setZ(zSubChunk * 4 + localZ);
+
+								BlockState toSet = AIR;
+
+								if (y < this.getSeaLevel()) {
+									toSet = Blocks.WATER.getDefaultState();
 								}
-								if(d15 > 0.0D)
-								{
-									l2 = Blocks.stone;
+								if (someValueToDoWithSettingStone > 0.0D) {
+									toSet = STONE;
 								}
-								blocks[j2] = l2;
-								j2 += c;
-								d15 += d16;
+
+								chunk.setBlockState(posMutable, toSet, false);
+								someValueToDoWithSettingStone += someOffsetThing;
 							}
 
-							d10 += d12;
-							d11 += d13;
+							sampleNWInitial += sampleNAverage;
+							sampleSWInitial += sampleSAverage;
 						}
 
-						d1 += d5;
-						d2 += d6;
-						d3 += d7;
-						d4 += d8;
+						sampleNWLow += sampleNWHigh;
+						sampleSWLow += sampleSWHigh;
+						sampleNELow += sampleNEHigh;
+						sampleSELow += sampleSEHigh;
 					}
-
 				}
-
 			}
-
 		}
 	}
-*/
-	@Override
-	public void buildSurface(Chunk chunk) {
-		ChunkPos chunkPos = chunk.getPos();
-	}
 
-	public void replaceSurfaceBlocks(Chunk chunk) {
-		BlockPos.Mutable pos = new BlockPos.Mutable();
+	private double[] generateOctaves(double[] oldArray, int x, int y, int z, int xSize, int ySize, int zSize) {
+		if (oldArray == null) {
+			oldArray = new double[xSize * ySize * zSize];
+		}
 
-		for (int x = 0; x < 16; ++x) {
-			pos.setX(x);
-			for (int z = 0; z < 16; ++z) {
-				pos.setZ(z);
-				int run = -1;
-				boolean air = true;
+		final double const1 = 684.412D;
+		final double const2 = 684.412D;
+		this.noiseArray4 =
+				this.noise6.sample(this.noiseArray4, (double) x, (double) y, (double) z, xSize, 1, zSize, 1.0D, 0.0D, 1.0D);
+		this.noiseArray5 = this.noise7.sample(this.noiseArray5, (double) x, (double) y, (double) z, xSize, 1, zSize, 100.0D, 0.0D, 100.0D);
+		this.noiseArray3 = this.noise3.sample(this.noiseArray3, (double) x, (double) y, (double) z, xSize, ySize, zSize, const1 / 80.0D, const2 / 160.0D, const1 / 80.0D);
+		this.noiseArray1 = this.noise1.sample(this.noiseArray1, (double) x, (double) y, (double) z, xSize, ySize, zSize, const1, const2, const1);
+		this.noiseArray2 = this.noise2.sample(this.noiseArray2, (double) x, (double) y, (double) z, xSize, ySize, zSize, const1, const2, const1);
 
-				for (int y = 255; y >= 0; --y) {
-					pos.setY(y);
-					BlockState b = AIR;
+		int index0 = 0;
+		int index1 = 0;
 
-					BlockState currentState = chunk.getBlockState(pos);
-					if(currentState == AIR) {
-						run = -1;
-					} else if(currentState == STONE) {
-						run++;
-						if(run == 0 && air) {
-							b = GRASS;
-						} else if(run < 3) {
-							b = DIRT;
-						} else {
-							b = STONE;
-						}
-						air = false;
-					} else {
-						run++;
-						b = currentState;
+		for (int localX = 0; localX < xSize; ++localX) {
+			for (int localZ = 0; localZ < zSize; ++localZ) {
+				double double0 = (this.noiseArray4[index1] + 256.0D) / 512.0D;
+				if (double0 > 1.0D) {
+					double0 = 1.0D;
+				}
+
+				double double2 = 0.0D;
+				double double3 = this.noiseArray5[index1] / 8000.0D;
+				if (double3 < 0.0D) {
+					double3 = -double3;
+				}
+
+				double3 = double3 * 3.0D - 3.0D;
+				if (double3 < 0.0D) {
+					double3 = double3 / 2.0D;
+					if (double3 < -1.0D) {
+						double3 = -1.0D;
 					}
 
-					chunk.setBlockState(pos, b, false);
+					double3 = double3 / 1.4D;
+					double3 = double3 / 2.0D;
+					double0 = 0.0D;
+				} else {
+					if (double3 > 1.0D) {
+						double3 = 1.0D;
+					}
+
+					double3 = double3 / 6.0D;
+				}
+
+				double0 = double0 + 0.5D;
+				double3 = double3 * (double) ySize / 16.0D;
+				double double4 = (double) ySize / 2.0D + double3 * 4.0D;
+				++index1;
+
+				for (int localY = 0; localY < ySize; ++localY) {
+					double double1 = 0.0D;
+					double double5 = ((double) localY - double4) * 12.0D / double0;
+					if (double5 < 0.0D) {
+						double5 *= 4.0D;
+					}
+
+					double sample0 = this.noiseArray1[index0] / 512.0D;
+					double sample1 = this.noiseArray2[index0] / 512.0D;
+					double sample2 = (this.noiseArray3[index0] / 10.0D + 1.0D) / 2.0D;
+					if (sample2 < 0.0D) {
+						double1 = sample0;
+					} else if (sample2 > 1.0D) {
+						double1 = sample1;
+					} else {
+						double1 = sample0 + (sample1 - sample0) * sample2;
+					}
+
+					double1 = double1 - double5;
+					if (localY > ySize - 4) {
+						double double6 = (double) ((float) (localY - (ySize - 4)) / 3.0F);
+						double1 = double1 * (1.0D - double6) + -10.0D * double6;
+					}
+
+					if ((double) localY < double2) {
+						double double7 = (double2 - (double) localY) / 4.0D;
+						if (double7 < 0.0D) {
+							double7 = 0.0D;
+						}
+
+						if (double7 > 1.0D) {
+							double7 = 1.0D;
+						}
+
+						double1 = double1 * (1.0D - double7) + -10.0D * double7;
+					}
+
+					oldArray[index0] = double1;
+					++index0;
+				}
+			}
+		}
+
+		return oldArray;
+	}
+
+	@Override
+	public void buildSurface(Chunk chunk) {
+		this.replaceSurfaceBlocks(chunk);
+	}
+
+	@Override
+	protected void buildBedrock(Chunk chunk, Random random) {
+	}
+
+	private void replaceSurfaceBlocks(Chunk chunk) {
+		BlockPos.Mutable pos = new BlockPos.Mutable();
+
+		int chunkX = chunk.getPos().x;
+		int chunkZ = chunk.getPos().z;
+
+		final int seaLevel = this.getSeaLevel();
+		final double oneSixteenth = 0.03125D;
+
+		this.sandSample = this.beachNoise.sample(this.sandSample, chunkX * 16, chunkZ * 16, 0.0D, 16, 16, 1, oneSixteenth, oneSixteenth, 1.0D);
+		this.gravelSample = this.beachNoise.sample(this.gravelSample, chunkZ * 16, 109.0134D, chunkX * 16, 16, 1, 16, oneSixteenth, 1.0D, oneSixteenth);
+		this.stoneNoise = this.surfaceNoise.sample(this.stoneNoise, chunkX * 16, chunkZ * 16, 0.0D, 16, 16, 1, oneSixteenth * 2.0D, oneSixteenth * 2.0D, oneSixteenth * 2.0D);
+
+		for (int x = 0; x < 16; x++) {
+			pos.setX(x);
+			for (int z = 0; z < 16; z++) {
+				pos.setZ(z);
+				boolean sandSampleAtPos = this.sandSample[(x + z * 16)] + random.nextDouble() * 0.2D > 0.0D;
+				boolean gravelSampleAtPos = this.gravelSample[(x + z * 16)] + random.nextDouble() * 0.2D > 3.0D;
+				int stoneSampleAtPos = (int) (this.stoneNoise[(x + z * 16)] / 3.0D + 3.0D + random.nextDouble() * 0.25D);
+				int run = -1;
+				BlockState topState = GRASS;
+				BlockState underState = DIRT;
+
+				for (int y = 256; y >= 128; --y) {
+					pos.setY(y);
+					chunk.setBlockState(pos, AIR, false);
+				}
+				for (int y = 127; y >= 0; --y) {
+					pos.setY(y);
+					if (y <= random.nextInt(6) - 1) {
+						chunk.setBlockState(new BlockPos(x, y, z), Blocks.BEDROCK.getDefaultState(), false);
+					} else {
+						Block currentBlock = chunk.getBlockState(pos).getBlock();
+
+						if (currentBlock == Blocks.AIR) {
+							run = -1;
+						} else if (currentBlock == Blocks.STONE) {
+							if (run == -1) {
+								if (stoneSampleAtPos <= 0) {
+									topState = AIR;
+									underState = STONE;
+								} else if ((y >= seaLevel - 4) && (y <= seaLevel + 1)) {
+									topState = GRASS;
+									underState = DIRT;
+
+									if (gravelSampleAtPos) {
+										topState = AIR;
+										underState = GRAVEL;
+									}
+
+									if (sandSampleAtPos) {
+										topState = SAND;
+										underState = SAND;
+									}
+								}
+
+								if ((y < seaLevel) && topState.isAir()) {
+									topState = Blocks.WATER.getDefaultState();
+								}
+
+								run = stoneSampleAtPos;
+								if (y >= seaLevel - 1) {
+									chunk.setBlockState(new BlockPos(x, y, z), topState, false);
+								} else {
+									chunk.setBlockState(new BlockPos(x, y, z), underState, false);
+								}
+							} else if (run > 0) {
+								run--;
+								chunk.setBlockState(new BlockPos(x, y, z), underState, false);
+							}
+						}
+					}
 				}
 			}
 		}
@@ -352,7 +378,7 @@ public class AlphaChunkGenerator extends SurfaceChunkGenerator<AlphaChunkGenerat
 		this.zombieSiegeManager.tick(serverWorld, spawnMonsters, spawnAnimals);
 	}
 
-	// We don't need these
+	// We don't actually need these
 	@Override
 	protected void sampleNoiseColumn(double[] array, int x, int z) {
 		this.sampleNoiseColumn(array, x, z, 684.4119873046875D, 684.4119873046875D, 8.555149841308594D, 4.277574920654297D, 3, -10);
@@ -364,5 +390,79 @@ public class AlphaChunkGenerator extends SurfaceChunkGenerator<AlphaChunkGenerat
 	@Override
 	protected double[] computeNoiseRange(int x, int z) {
 		return new double[] {0.1f, 0.1f}; 
+	}
+
+	@Override
+	public int getHeight(int x, int z) { // lol I should probably make this caching
+		int chunkX = (x >> 4);
+		int chunkZ = (z >> 4);
+		final double oneEighth = 0.125D;
+		final double oneQuarter = 0.25D;
+
+		this.heightNoise = this.generateOctaves(this.heightNoise, chunkX * 4, 0, chunkZ * 4, 5, 17, 5);
+
+		int xSubChunk = (x >> 2) & 0b11;
+		int zSubChunk = (z >> 2) & 0b11;
+
+		int maxGroundY = 0;
+
+		final int actualLocalX = x - chunkX - xSubChunk;
+		final int actualLocalZ = x - chunkZ - zSubChunk;
+
+		for (int ySubChunk = 0; ySubChunk < 16; ++ySubChunk) {
+
+			double sampleNWLow = this.heightNoise[(xSubChunk * 5 + zSubChunk) * 17 + ySubChunk];
+			double sampleSWLow = this.heightNoise[((xSubChunk) * 5 + zSubChunk + 1) * 17 + ySubChunk];
+			double sampleNELow = this.heightNoise[((xSubChunk + 1) * 5 + zSubChunk) * 17 + ySubChunk];
+			double sampleSELow = this.heightNoise[((xSubChunk + 1) * 5 + zSubChunk + 1) * 17 + ySubChunk];
+
+			double sampleNWHigh = (this.heightNoise[((xSubChunk) * 5 + zSubChunk) * 17 + ySubChunk + 1] - sampleNWLow) * oneEighth;
+			double sampleSWHigh = (this.heightNoise[((xSubChunk) * 5 + zSubChunk + 1) * 17 + ySubChunk + 1] - sampleSWLow) * oneEighth;
+			double sampleNEHigh = (this.heightNoise[((xSubChunk + 1) * 5 + zSubChunk) * 17 + ySubChunk + 1] - sampleNELow) * oneEighth;
+			double sampleSEHigh = (this.heightNoise[((xSubChunk + 1) * 5 + zSubChunk + 1) * 17 + ySubChunk + 1] - sampleSELow) * oneEighth;
+
+			for (int localY = 0; localY < 8; ++localY) {
+				int y = ySubChunk * 8 + localY;;
+
+				double sampleNWInitial = sampleNWLow;
+				double sampleSWInitial = sampleSWLow;
+				double sampleNAverage = (sampleNELow - sampleNWLow) * oneQuarter;
+				double sampleSAverage = (sampleSELow - sampleSWLow) * oneQuarter;
+
+				xloop: for (int localX = 0; localX < 4; ++localX) {
+
+					double someValueToDoWithSettingStone = sampleNWInitial;
+					double someOffsetThing = (sampleSWInitial - sampleNWInitial) * oneQuarter;
+
+					for (int localZ = 0; localZ < 4; ++localZ) {
+
+						if (someValueToDoWithSettingStone > 0.0D) {
+							maxGroundY = y;
+						}
+
+						someValueToDoWithSettingStone += someOffsetThing;
+
+						if (actualLocalZ == localZ && actualLocalX == localX) {
+							break xloop;
+						}
+					}
+
+					sampleNWInitial += sampleNAverage;
+					sampleSWInitial += sampleSAverage;
+				}
+
+				sampleNWLow += sampleNWHigh;
+				sampleSWLow += sampleSWHigh;
+				sampleNELow += sampleNEHigh;
+				sampleSELow += sampleSEHigh;
+			}
+		}
+		
+		return maxGroundY;
+	}
+
+	@Override
+	public int getSeaLevelForGen() {
+		return 64;
 	}
 }
