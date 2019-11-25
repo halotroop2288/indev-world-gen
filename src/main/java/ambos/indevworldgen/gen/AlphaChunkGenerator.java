@@ -44,15 +44,17 @@ public class AlphaChunkGenerator extends SurfaceChunkGenerator<AlphaChunkGenerat
 
 	public AlphaChunkGenerator(IWorld world, BiomeSource biomeSource, AlphaChunkGeneratorConfig config) {
 		super(world, biomeSource, 4, 8, 256, config, true);
+		
+		Random rand = new Random(world.getSeed());
 
-		noise1 = new OctaveAlphaNoiseSampler(this.random, 16);
-		noise2 = new OctaveAlphaNoiseSampler(this.random, 16);
-		noise3 = new OctaveAlphaNoiseSampler(this.random, 8);
-		beachNoise = new OctaveAlphaNoiseSampler(this.random, 4);
-		surfaceNoise = new OctaveAlphaNoiseSampler(this.random, 4);
-		noise6 = new OctaveAlphaNoiseSampler(this.random, 10);
-		noise7 = new OctaveAlphaNoiseSampler(this.random, 16);
-		noise8 = new OctaveAlphaNoiseSampler(this.random, 8);
+		noise1 = new OctaveAlphaNoiseSampler(rand, 16);
+		noise2 = new OctaveAlphaNoiseSampler(rand, 16);
+		noise3 = new OctaveAlphaNoiseSampler(rand, 8);
+		beachNoise = new OctaveAlphaNoiseSampler(rand, 4);
+		surfaceNoise = new OctaveAlphaNoiseSampler(rand, 4);
+		noise6 = new OctaveAlphaNoiseSampler(rand, 10);
+		noise7 = new OctaveAlphaNoiseSampler(rand, 16);
+		noise8 = new OctaveAlphaNoiseSampler(rand, 8);
 
 		this.random.consume(2620);
 
