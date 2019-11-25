@@ -41,7 +41,7 @@ public class IndevChunkGenerator extends SurfaceChunkGenerator<IndevChunkGenerat
 
 	public final Type type;
 	private final int size; // the original mod changed this based on type
-	private final int layers = 4;
+	private final int layers = 2;
 	private final double width = 2D;
 
 	// I'm porting code from another mod back in 1.7.10
