@@ -4,8 +4,10 @@ import java.util.function.LongFunction;
 
 import com.google.common.collect.ImmutableList;
 
+import ambos.indevworldgen.IndevWorldGen;
 import ambos.indevworldgen.gen.biomesource.layer.AlwaysContinentLayer;
 import ambos.indevworldgen.gen.biomesource.layer.AlwaysOceanLayer;
+import ambos.indevworldgen.gen.biomesource.layer.YeetSwampsOutOfExistanceLayer;
 import net.minecraft.world.biome.layer.AddBambooJungleLayer;
 import net.minecraft.world.biome.layer.AddClimateLayers;
 import net.minecraft.world.biome.layer.AddColdClimatesLayer;
@@ -59,7 +61,7 @@ public final class OldBiomeLayers {
 		continent = AddMushroomIslandLayer.INSTANCE.create(contextProvider.apply(5L), continent);
 		continent = AddDeepOceanLayer.INSTANCE.create(contextProvider.apply(4L), continent);
 		continent = stackRepeat(1000L, ScaleLayer.NORMAL, continent, 0, contextProvider);
-		
+
 		int biomeSize = 4;
 		if (settings != null) {
 			biomeSize = settings.getBiomeSize();
@@ -69,7 +71,11 @@ public final class OldBiomeLayers {
 		noise = SimpleLandNoiseLayer.INSTANCE.create(contextProvider.apply(100L), noise);
 		LayerFactory<T> biomes = (new SetBaseBiomesLayer(LevelGeneratorType.DEFAULT, settings)).create(contextProvider.apply(200L), continent);
 		biomes = AddBambooJungleLayer.INSTANCE.create(contextProvider.apply(1001L), biomes);
-		biomes = stackRepeat(1000L, ScaleLayer.NORMAL, biomes, 2, contextProvider);
+		biomes = stackRepeat(1000L, ScaleLayer.NORMAL, biomes, 1, contextProvider);
+		if (!IndevWorldGen.config.generateSwamps) {
+			biomes = YeetSwampsOutOfExistanceLayer.INSTANCE.create(contextProvider.apply(200L), biomes);
+		}
+		biomes = stackRepeat(1001L, ScaleLayer.NORMAL, biomes, 1, contextProvider);
 		biomes = EaseBiomeEdgeLayer.INSTANCE.create(contextProvider.apply(1000L), biomes);
 		LayerFactory<T> noise2 = stackRepeat(1000L, ScaleLayer.NORMAL, noise, 2, contextProvider);
 		biomes = AddHillsLayer.INSTANCE.create(contextProvider.apply(1000L), biomes, noise2);
@@ -88,30 +94,49 @@ public final class OldBiomeLayers {
 
 		biomes = SmoothenShorelineLayer.INSTANCE.create(contextProvider.apply(1000L), biomes);
 		biomes = AddRiversLayer.INSTANCE.create(contextProvider.apply(100L), biomes, noise);
-		
+
 		// ocean
 		LayerFactory<T> oceanTemperature = OceanTemperatureLayer.INSTANCE.create(contextProvider.apply(2L));
 		oceanTemperature = stackRepeat(2001L, ScaleLayer.NORMAL, oceanTemperature, 6, contextProvider);
-		
+
 		LayerFactory<T> ocean = AlwaysOceanLayer.INSTANCE.create(contextProvider.apply(1L));
 		ocean = ApplyOceanTemperatureLayer.INSTANCE.create(contextProvider.apply(100L), ocean, oceanTemperature);
-		
+
 		// final stuff
 		biomes = CellScaleLayer.INSTANCE.create(contextProvider.apply(10L), biomes);
 		ocean = CellScaleLayer.INSTANCE.create(contextProvider.apply(10L), ocean);
-		
+
 		return ImmutableList.of(ocean, biomes);
 	}
 
-	public static BiomeLayerSampler[] build(long seed, OverworldChunkGeneratorConfig settings) {
+	public static BiomeSamplerPicker build(long seed, OverworldChunkGeneratorConfig settings) {
 		final int cacheSize = 25;
 		ImmutableList<LayerFactory<CachingLayerSampler>> resultList = buildFactories(settings, (salt) -> {
 			return new CachingLayerContext(cacheSize, seed, salt);
 		});
-		
+
 		BiomeLayerSampler oceanSampler = new BiomeLayerSampler(resultList.get(0));
 		BiomeLayerSampler landSampler = new BiomeLayerSampler(resultList.get(1));
-		
-		return new BiomeLayerSampler[]{oceanSampler, landSampler};
+
+		return new DefaultBiomeSamplerPicker(oceanSampler, landSampler);
+	}
+
+	static class DefaultBiomeSamplerPicker implements BiomeSamplerPicker {
+		private final BiomeLayerSampler oceanSampler, landSampler;
+
+		public DefaultBiomeSamplerPicker(BiomeLayerSampler ocean, BiomeLayerSampler land) {
+			oceanSampler = ocean;
+			landSampler = land;
+		}
+
+		@Override
+		public BiomeLayerSampler getSampler(HeightRetriever heightRetriever, int x, int z) {
+			if (heightRetriever.getHeight(x, z) < heightRetriever.getSeaLevelForBiomeGen()) {
+				return this.oceanSampler;
+			} else {
+				return this.landSampler;
+			}
+		}
+
 	}
 }
