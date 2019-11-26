@@ -355,6 +355,14 @@ public class AlphaChunkGenerator extends SurfaceChunkGenerator<AlphaChunkGenerat
 
 	@Override
 	public void generateFeatures(ChunkRegion region) {
+		if (IndevWorldGen.config.alphaTreePlacementStyle) {
+			generateFeaturesAlpha(region);
+		} else {
+			super.generateFeatures(region);
+		}
+	}
+
+	private void generateFeaturesAlpha(ChunkRegion region) {
 		int chunkX = region.getCenterChunkX();
 		int chunkZ = region.getCenterChunkZ();
 		int x = chunkX * 16;
@@ -381,7 +389,6 @@ public class AlphaChunkGenerator extends SurfaceChunkGenerator<AlphaChunkGenerat
 				throw new CrashException(crashReport);
 			}
 		}
-
 	}
 
 	private final ChunkRandom alphaTreeRand = new ChunkRandom();
@@ -404,6 +411,7 @@ public class AlphaChunkGenerator extends SurfaceChunkGenerator<AlphaChunkGenerat
 
 		ConfiguredFeature<?> randomTreeProvider = getConfiguredTreeFeature(count);
 		
+		// the tree provider is sometimes null so this check is neccessary
 		if (randomTreeProvider != null && count > 0) {
 			try {
 				randomTreeProvider.generate(region, this, alphaTreeRand, pos);
@@ -414,10 +422,7 @@ public class AlphaChunkGenerator extends SurfaceChunkGenerator<AlphaChunkGenerat
 				reportSection.add("Description", reportFeature::toString);
 				throw new CrashException(crashReport);
 			}
-		} else {
-			IndevWorldGen.log.info("wtf null");
 		}
-		System.out.println("finished tree gen");
 	}
 
 	private static ConfiguredFeature<?> getConfiguredTreeFeature(int count) {

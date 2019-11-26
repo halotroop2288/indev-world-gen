@@ -57,7 +57,8 @@ public class IndevWorldGen implements ModInitializer {
 
 				try (FileWriter writer = new FileWriter(loc)) {
 					writer.write("{\n" + 
-							"  \"generateSwamps\": true\n" +
+							"  \"generateSwamps\": true,\n" +
+							"  \"alphaTreePlacementStyle\": false\n" +
 							"}");
 				} catch (FileNotFoundException e) {
 					throw new RuntimeException("Unhandled FileNotFoundException in generating config!");
