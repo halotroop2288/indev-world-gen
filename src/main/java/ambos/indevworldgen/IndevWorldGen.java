@@ -42,11 +42,8 @@ public class IndevWorldGen implements ModInitializer {
 
 		for(Biome biome : Registry.BIOME)
 		{
-			if(biome.getCategory() != Biome.Category.OCEAN && biome.getCategory() != Biome.Category.RIVER)
-			{
-				biome.addStructureFeature(indevHouseFeature, new DefaultFeatureConfig());
-				biome.addFeature(GenerationStep.Feature.SURFACE_STRUCTURES, Biome.configureFeature(indevHouseFeature, new DefaultFeatureConfig(), Decorator.CHANCE_PASSTHROUGH, new ChanceDecoratorConfig(0)));
-			}
+			biome.addStructureFeature(indevHouseFeature, new DefaultFeatureConfig());
+			biome.addFeature(GenerationStep.Feature.SURFACE_STRUCTURES, Biome.configureFeature(indevHouseFeature, new DefaultFeatureConfig(), Decorator.CHANCE_PASSTHROUGH, new ChanceDecoratorConfig(0)));
 		}
 	}
 
