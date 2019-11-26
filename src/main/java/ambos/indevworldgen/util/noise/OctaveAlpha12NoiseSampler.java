@@ -2,14 +2,14 @@ package ambos.indevworldgen.util.noise;
 
 import java.util.Random;
 
-public class OctaveAlphaNoiseSampler {
+public class OctaveAlpha12NoiseSampler {
 
-	public OctaveAlphaNoiseSampler(Random random, int octaveCount) {
+	public OctaveAlpha12NoiseSampler(Random random, int octaveCount) {
 		octaves = octaveCount;
-		octaveSamplers = new AlphaNoiseSampler[octaveCount];
+		octaveSamplers = new Alpha12NoiseSampler[octaveCount];
 		for(int j = 0; j < octaveCount; j++)
 		{
-			octaveSamplers[j] = new AlphaNoiseSampler(random);
+			octaveSamplers[j] = new Alpha12NoiseSampler(random);
 		}
 
 	}
@@ -42,7 +42,7 @@ public class OctaveAlphaNoiseSampler {
 		double d6 = 1.0D;
 		for(int i1 = 0; i1 < octaves; i1++)
 		{
-			octaveSamplers[i1].func_805_a(ad, d, d1, d2, i, j, k, d3 * d6, d4 * d6, d5 * d6, d6);
+			octaveSamplers[i1].sample(ad, d, d1, d2, i, j, k, d3 * d6, d4 * d6, d5 * d6, d6);
 			d6 /= 2D;
 		}
 
@@ -53,6 +53,6 @@ public class OctaveAlphaNoiseSampler {
 		return sample(ad, i, 10D, j, k, 1, l, d, 1.0D, d1);
 	}
 
-	private AlphaNoiseSampler[] octaveSamplers;
+	private Alpha12NoiseSampler[] octaveSamplers;
 	private int octaves;
 }

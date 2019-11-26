@@ -5,7 +5,7 @@ import java.util.Random;
 
 import ambos.indevworldgen.gen.biomesource.HeightRetriever;
 import ambos.indevworldgen.gen.biomesource.OldBiomeSource;
-import ambos.indevworldgen.util.noise.OctaveAlphaNoiseSampler;
+import ambos.indevworldgen.util.noise.OctaveAlpha11NoiseSampler;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -27,14 +27,14 @@ import net.minecraft.world.gen.chunk.SurfaceChunkGenerator;
 import net.minecraft.world.gen.feature.Feature;
 
 public class AlphaChunkGenerator extends SurfaceChunkGenerator<AlphaChunkGeneratorConfig> implements HeightRetriever {
-	private OctaveAlphaNoiseSampler noise1;
-	private OctaveAlphaNoiseSampler noise2;
-	private OctaveAlphaNoiseSampler noise3;
-	private OctaveAlphaNoiseSampler beachNoise;
-	private OctaveAlphaNoiseSampler surfaceNoise;
-	public OctaveAlphaNoiseSampler noise6;
-	public OctaveAlphaNoiseSampler noise7;
-	public OctaveAlphaNoiseSampler noise8;
+	private OctaveAlpha11NoiseSampler noise1;
+	private OctaveAlpha11NoiseSampler noise2;
+	private OctaveAlpha11NoiseSampler noise3;
+	private OctaveAlpha11NoiseSampler beachNoise;
+	private OctaveAlpha11NoiseSampler surfaceNoise;
+	public OctaveAlpha11NoiseSampler noise6;
+	public OctaveAlpha11NoiseSampler noise7;
+	public OctaveAlpha11NoiseSampler noise8;
 
 	private double[] heightNoise;
 	private double[] noiseArray1, noiseArray2, noiseArray3, noiseArray4, noiseArray5;
@@ -47,14 +47,14 @@ public class AlphaChunkGenerator extends SurfaceChunkGenerator<AlphaChunkGenerat
 		
 		Random rand = new Random(world.getSeed());
 
-		noise1 = new OctaveAlphaNoiseSampler(rand, 16);
-		noise2 = new OctaveAlphaNoiseSampler(rand, 16);
-		noise3 = new OctaveAlphaNoiseSampler(rand, 8);
-		beachNoise = new OctaveAlphaNoiseSampler(rand, 4);
-		surfaceNoise = new OctaveAlphaNoiseSampler(rand, 4);
-		noise6 = new OctaveAlphaNoiseSampler(rand, 10);
-		noise7 = new OctaveAlphaNoiseSampler(rand, 16);
-		noise8 = new OctaveAlphaNoiseSampler(rand, 8);
+		noise1 = new OctaveAlpha11NoiseSampler(rand, 16);
+		noise2 = new OctaveAlpha11NoiseSampler(rand, 16);
+		noise3 = new OctaveAlpha11NoiseSampler(rand, 8);
+		beachNoise = new OctaveAlpha11NoiseSampler(rand, 4);
+		surfaceNoise = new OctaveAlpha11NoiseSampler(rand, 4);
+		noise6 = new OctaveAlpha11NoiseSampler(rand, 10);
+		noise7 = new OctaveAlpha11NoiseSampler(rand, 16);
+		noise8 = new OctaveAlpha11NoiseSampler(rand, 8);
 
 		this.random.consume(2620);
 

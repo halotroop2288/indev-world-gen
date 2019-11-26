@@ -2,13 +2,13 @@ package ambos.indevworldgen.util.noise;
 
 import java.util.Random;
 
-public class AlphaNoiseSampler {
+public class Alpha12NoiseSampler {
 
-	public AlphaNoiseSampler() {
+	public Alpha12NoiseSampler() {
 		this(new Random());
 	}
 
-	public AlphaNoiseSampler(Random rand)
+	public Alpha12NoiseSampler(Random rand)
 	{
 		p = new int[512];
 		xOffset = rand.nextDouble() * 256D;
@@ -74,7 +74,7 @@ public class AlphaNoiseSampler {
 		return d1 + d * (d2 - d1);
 	}
 
-	public final double otherGradThing(int hash, double d, double d1)
+	public final double grad(int hash, double d, double d1)
 	{
 		int j = hash & 0xf;
 		double d2 = (double)(1 - ((j & 8) >> 3)) * d;
@@ -95,7 +95,7 @@ public class AlphaNoiseSampler {
 		return sample(x, y, 0.0D);
 	}
 
-	public void func_805_a(double ad[], double d, double d1, double d2, int i, int j, int k, double d3, double d4, double d5, double d6) {
+	public void sample(double ad[], double d, double d1, double d2, int i, int j, int k, double d3, double d4, double d5, double d6) {
 		if(j == 1)
 		{
 			int j4 = 0;
@@ -126,7 +126,7 @@ public class AlphaNoiseSampler {
 					int j1 = p[l] + l6;
 					int l1 = p[j5 + 1] + 0;
 					int j2 = p[l1] + l6;
-					double d9 = lerp(d21, otherGradThing(p[j1], d19, d23), grad(p[j2], d19 - 1.0D, 0.0D, d23));
+					double d9 = lerp(d21, grad(p[j1], d19, d23), grad(p[j2], d19 - 1.0D, 0.0D, d23));
 					double d12 = lerp(d21, grad(p[j1 + 1], d19, 0.0D, d23 - 1.0D), grad(p[j2 + 1], d19 - 1.0D, 0.0D, d23 - 1.0D));
 					double d27 = lerp(d25, d9, d12);
 					ad[j4++] += d27 * d17;
