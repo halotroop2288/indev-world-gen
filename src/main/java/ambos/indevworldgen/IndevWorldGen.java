@@ -30,7 +30,7 @@ public class IndevWorldGen implements ModInitializer {
 	public static IndevWorldGenConfig config = new IndevWorldGenConfig();
 
 	static OldWorldType<?> loadMeOnClientPls; // make sure world types are loaded on client by referencing a field in onInitialize()
-	static Logger log;
+	public static Logger log;
 	
 	@Override
 	public void onInitialize() {
@@ -50,10 +50,10 @@ public class IndevWorldGen implements ModInitializer {
 		// first make sure config folder exists
 		new File("./config/").mkdir();
 
-		File loc = new File("./config/climaticworldtype.json");
+		File loc = new File("./config/indevworldgen.json");
 		try {
 			if (loc.createNewFile()) {
-				log.info("Creating config for climatic world type");
+				log.info("Creating config for indev world gen");
 
 				try (FileWriter writer = new FileWriter(loc)) {
 					writer.write("{\n" + 
@@ -64,7 +64,7 @@ public class IndevWorldGen implements ModInitializer {
 				}
 			}
 
-			log.info("Loading climatic world type config file");
+			log.info("Loading indev world type config file");
 			try (FileReader reader = new FileReader(loc)) {
 				config = gson.fromJson(reader, IndevWorldGenConfig.class);
 			} catch (FileNotFoundException e) {
