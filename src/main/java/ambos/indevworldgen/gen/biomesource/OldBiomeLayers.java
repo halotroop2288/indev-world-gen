@@ -137,6 +137,5 @@ public final class OldBiomeLayers {
 				return this.landSampler;
 			}
 		}
-
 	}
 }
