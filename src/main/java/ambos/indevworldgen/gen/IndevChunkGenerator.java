@@ -175,7 +175,7 @@ public class IndevChunkGenerator extends SurfaceChunkGenerator<IndevChunkGenerat
 		if (this.type != Type.FLOATING) {
 			super.carve(chunk, carverStep);
 		}
-	} // proudly stealing 1.7.10 code from https://github.com/Ted80-Minecraft-Mods/Old-World-Gen
+	}
 
 	public void generateSkylands(Chunk chunk, int chunkX, int chunkZ) {
 		int seaLevel = 64;
@@ -266,7 +266,6 @@ public class IndevChunkGenerator extends SurfaceChunkGenerator<IndevChunkGenerat
 	}
 
 	// Code to port to 1.14.4 from 1.7.10
-	// Do I even want to stream this lol
 	public void generateTerrain(Chunk chunk, int chunkX, int chunkZ)
 	{		
 		final int seaLevel = 64;
@@ -407,7 +406,7 @@ public class IndevChunkGenerator extends SurfaceChunkGenerator<IndevChunkGenerat
 	
 	@Override
 	public void generateFeatures(ChunkRegion region) {
-		if (IndevWorldGen.config.alphaTreePlacementStyle) {
+		if (IndevWorldGen.config.alphaTreePlacementStyle && (this.type != Type.WOODS)) {
 			generateFeaturesAlpha(region);
 		} else {
 			super.generateFeatures(region);
@@ -617,9 +616,14 @@ public class IndevChunkGenerator extends SurfaceChunkGenerator<IndevChunkGenerat
 
 		return maxGroundY;
 	}
+	
+	@Override
+	public int getHeightOnGround(int x, int z, net.minecraft.world.Heightmap.Type heightmapType) {
+		return this.getHeight(x, z) + 1;
+	}
 
 	@Override
 	public int getSeaLevelForBiomeGen() {
-		return 64;
+		return 63;
 	}
 }

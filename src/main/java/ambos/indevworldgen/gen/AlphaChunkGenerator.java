@@ -21,6 +21,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.village.ZombieSiegeManager;
 import net.minecraft.world.ChunkRegion;
+import net.minecraft.world.Heightmap.Type;
 import net.minecraft.world.IWorld;
 import net.minecraft.world.SpawnHelper;
 import net.minecraft.world.biome.Biome;
@@ -74,7 +75,17 @@ public class AlphaChunkGenerator extends SurfaceChunkGenerator<AlphaChunkGenerat
 		if (biomeSource instanceof OldBiomeSource) {
 			((OldBiomeSource) biomeSource).setHeightRetriever(this);
 		}
+		
+		/* for (int testX = 0; testX < 16; ++testX) {
+			for (int testZ = 0; testZ < 16; ++testZ) {
+				System.out.println(toString(testX) + ", " + toString(testZ) + ": " + getHeight_OLD(testX, testZ));
+			}
+		} // */
 	}
+	
+	/* private static String toString(int i) {
+		return String.valueOf(i);
+	} // */
 
 	@Override
 	public void populateEntities(ChunkRegion region) {
@@ -129,7 +140,7 @@ public class AlphaChunkGenerator extends SurfaceChunkGenerator<AlphaChunkGenerat
 						for (int localX = 0; localX < 4; ++localX) {
 							posMutable.setX(localX + xSubChunk * 4);
 
-							double someValueToDoWithSettingStone = sampleNWInitial;
+							double sample = sampleNWInitial;
 							double someOffsetThing = (sampleSWInitial - sampleNWInitial) * oneQuarter;
 
 							for (int localZ = 0; localZ < 4; ++localZ) {
@@ -140,12 +151,12 @@ public class AlphaChunkGenerator extends SurfaceChunkGenerator<AlphaChunkGenerat
 								if (y < this.getSeaLevel()) {
 									toSet = Blocks.WATER.getDefaultState();
 								}
-								if (someValueToDoWithSettingStone > 0.0D) {
+								if (sample > 0.0D) {
 									toSet = STONE;
 								}
 
 								chunk.setBlockState(posMutable, toSet, false);
-								someValueToDoWithSettingStone += someOffsetThing;
+								sample += someOffsetThing;
 							}
 
 							sampleNWInitial += sampleNAverage;
@@ -410,7 +421,7 @@ public class AlphaChunkGenerator extends SurfaceChunkGenerator<AlphaChunkGenerat
 		}
 
 		ConfiguredFeature<?> randomTreeProvider = getConfiguredTreeFeature(count);
-		
+
 		// the tree provider is sometimes null so this check is neccessary
 		if (randomTreeProvider != null && count > 0) {
 			try {
@@ -487,6 +498,11 @@ public class AlphaChunkGenerator extends SurfaceChunkGenerator<AlphaChunkGenerat
 	}
 
 	@Override
+	public int getHeightOnGround(int x, int z, Type heightmapType) {
+		return this.getHeight(x, z) + 1;
+	}
+
+	@Override
 	public int getHeight(int x, int z) { // lol I should probably make this caching
 		int chunkX = (x >> 4);
 		int chunkZ = (z >> 4);
@@ -500,9 +516,9 @@ public class AlphaChunkGenerator extends SurfaceChunkGenerator<AlphaChunkGenerat
 
 		int maxGroundY = 0;
 
-		final int actualLocalX = x - chunkX - xSubChunk;
-		final int actualLocalZ = x - chunkZ - zSubChunk;
-
+		final int actualLocalX = x - (chunkX << 4) - (xSubChunk << 2);
+		final int actualLocalZ = z - (chunkZ << 4) - (zSubChunk << 2);
+		
 		for (int ySubChunk = 0; ySubChunk < 16; ++ySubChunk) {
 
 			double sampleNWLow = this.heightNoise[(xSubChunk * 5 + zSubChunk) * 17 + ySubChunk];
@@ -557,6 +573,6 @@ public class AlphaChunkGenerator extends SurfaceChunkGenerator<AlphaChunkGenerat
 
 	@Override
 	public int getSeaLevelForBiomeGen() {
-		return 64;
+		return 63;
 	}
 }

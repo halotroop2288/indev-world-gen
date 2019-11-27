@@ -7,7 +7,7 @@ public interface HeightRetriever {
 	static HeightRetriever NONE = new HeightRetriever() {
 		@Override
 		public int getSeaLevelForBiomeGen() {
-			return 64;
+			return 63;
 		}
 		@Override
 		public int getHeight(int x, int z) {
