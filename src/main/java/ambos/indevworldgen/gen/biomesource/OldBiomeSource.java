@@ -30,7 +30,7 @@ public class OldBiomeSource extends BiomeSource {
 	}
 
 	@Override
-	public Biome getBiome(int x, int z) {
+	public Biome getBiome(int x, int z) { // why tf does it only pick biomes per chunk. vanilla clearly shows it's possible to pick per block
 		return this.samplerPicker.getSampler(heightRetriever, x, z).sample(x, z);
 	}
 

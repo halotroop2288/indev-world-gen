@@ -102,7 +102,7 @@ public final class OldBiomeLayers {
 		LayerFactory<T> ocean = AlwaysOceanLayer.INSTANCE.create(contextProvider.apply(1L));
 		ocean = ApplyOceanTemperatureLayer.INSTANCE.create(contextProvider.apply(100L), ocean, oceanTemperature);
 
-		// final stuff
+		// final stuff. won't be neccessary on 1.15.
 		biomes = CellScaleLayer.INSTANCE.create(contextProvider.apply(10L), biomes);
 		ocean = CellScaleLayer.INSTANCE.create(contextProvider.apply(10L), ocean);
 
