@@ -4,6 +4,7 @@ import ambos.indevworldgen.util.noise.OctaveInfdev0415NoiseSampler;
 import net.minecraft.world.IWorld;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.source.BiomeSource;
+import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.gen.chunk.SurfaceChunkGenerator;
 
 import java.util.Random;
@@ -18,7 +19,6 @@ public class InfdevChunkGenerator extends SurfaceChunkGenerator<AlphaChunkGenera
 
     public InfdevChunkGenerator(IWorld world, BiomeSource biomeSource, AlphaChunkGeneratorConfig config){
         super(world, biomeSource, 4, 8, 256, config, true);
-        //super(world, l, flag);
 
         Random rand = new Random(world.getSeed());
 
@@ -33,11 +33,11 @@ public class InfdevChunkGenerator extends SurfaceChunkGenerator<AlphaChunkGenera
 
     @Override
     public int getSpawnHeight() {
-        return 0;
+        return this.world.getSeaLevel() + 1;
     }
 
-    @Override
-    protected void generateTerrain(int i, int j, byte abyte0[]){
+    /*@Override
+    public void generateTerrain(int i, int j, byte abyte0[]){
         for(int k = 0; k < 4; k++)
         {
             for(int i1 = 0; i1 < 4; i1++)
@@ -93,10 +93,10 @@ public class InfdevChunkGenerator extends SurfaceChunkGenerator<AlphaChunkGenera
                 }
             }
         }
-    }
+    }*/
 
-    /*@Override
-    protected void replaceBlocks(int i, int j, byte abyte0[]){
+    /*
+    public void replaceSurfaceBlocks(Chunk chunk){
         for(int l = 0; l < 16; l++)
         {
             for(int j1 = 0; j1 < 16; j1++)
@@ -104,21 +104,12 @@ public class InfdevChunkGenerator extends SurfaceChunkGenerator<AlphaChunkGenera
                 double d2 = (i << 4) + l;
                 double d4 = (j << 4) + j1;
                 double asd = 0.0D;
-                if(ODNBXlite.MapTheme==ODNBXlite.THEME_PARADISE)
-                {
-                    asd = -0.29999999999999999D;
-                }
                 boolean flag = ODNBXlite.MapFeatures==ODNBXlite.FEATURES_INFDEV0415 && noiseSandGen.generateNoise(d2 * 0.03125D, d4 * 0.03125D, 0.0D) + rand.nextDouble() * 0.20000000000000001D > asd;
                 boolean flag1 = ODNBXlite.MapFeatures==ODNBXlite.FEATURES_INFDEV0415 && noiseSandGen.generateNoise(d4 * 0.03125D, 109.0134D, d2 * 0.03125D) + rand.nextDouble() * 0.20000000000000001D > 3D;
                 int k2 = (int)(rockSandGen.func_806_a(d2 * 0.03125D * 2D, d4 * 0.03125D * 2D) / 3D + 3D + rand.nextDouble() * 0.25D);
                 int l2 = l << 11 | j1 << 7 | 0x7f;
                 int i3 = -1;
-                int j3;
-                if (ODNBXlite.MapTheme==ODNBXlite.THEME_HELL){
-                    j3 = Block.dirt.blockID;
-                }else{
-                    j3 = Block.grass.blockID;
-                }
+                int j3 = Block.grass.blockID;
                 int k3 = Block.dirt.blockID;
                 for(int l3 = 127; l3 >= 0; l3--)
                 {
@@ -135,31 +126,19 @@ public class InfdevChunkGenerator extends SurfaceChunkGenerator<AlphaChunkGenera
                             } else
                             if(l3 >= 60 && l3 <= 65)
                             {
-                                if (ODNBXlite.MapTheme==ODNBXlite.THEME_HELL){
-                                    j3 = Block.dirt.blockID;
-                                }else{
-                                    j3 = Block.grass.blockID;
-                                }
+                                j3 = Block.grass.blockID;
                                 k3 = Block.dirt.blockID;
                                 if(flag1)
                                     j3 = 0;
                                 if(flag1)
                                     k3 = Block.gravel.blockID;
                                 if(flag)
-                                    if (ODNBXlite.MapTheme==ODNBXlite.THEME_HELL){
-                                        j3 = Block.grass.blockID;
-                                    }else{
                                         j3 = Block.sand.blockID;
-                                    }
                                 if(flag)
                                     k3 = Block.sand.blockID;
                             }
                             if(l3 < 64 && j3 == 0)
-                                if (ODNBXlite.MapTheme==ODNBXlite.THEME_HELL){
-                                    j3 = Block.lavaStill.blockID;
-                                }else{
-                                    j3 = Block.waterStill.blockID;
-                                }
+                                j3 = Block.lavaStill.blockID;
                             i3 = k2;
                             if(l3 >= 63)
                                 abyte0[l2] = (byte)j3;
@@ -173,9 +152,7 @@ public class InfdevChunkGenerator extends SurfaceChunkGenerator<AlphaChunkGenera
                         }
                     l2--;
                 }
-
             }
-
         }
     }*/
 
@@ -235,25 +212,6 @@ public class InfdevChunkGenerator extends SurfaceChunkGenerator<AlphaChunkGenera
 
     }
 
-    /*
-    @Override
-    protected void generateStructures(int i, int j, byte abyte0[]){
-        if(mapFeaturesEnabled){
-            if (ODNBXlite.Structures[0]){
-                ravineGenerator.generate(this, worldObj, i, j, abyte0);
-            }
-            if (ODNBXlite.Structures[3]){
-                mineshaftGenerator.generate(this, worldObj, i, j, abyte0);
-            }
-            if (ODNBXlite.Structures[1]){
-                villageGenerator.generate(this, worldObj, i, j, abyte0);
-            }
-            if (ODNBXlite.Structures[2]){
-                strongholdGenerator.generate(this, worldObj, i, j, abyte0);
-            }
-        }
-    }
-    */
 
     /*
     @Override
@@ -361,14 +319,5 @@ public class InfdevChunkGenerator extends SurfaceChunkGenerator<AlphaChunkGenera
         spawnAnimals(x * 16, z * 16);
     }
 
-    @Override
-    public ChunkPosition findClosestStructure(World world, String s, int i, int j, int k){
-        if("Stronghold".equals(s) && strongholdGenerator != null){
-            return strongholdGenerator.getNearestInstance(world, i, j, k);
-        }else{
-            return null;
-        }
-    }
-
-     */
+   */
 }

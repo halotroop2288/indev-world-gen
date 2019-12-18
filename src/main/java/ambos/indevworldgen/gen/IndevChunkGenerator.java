@@ -220,8 +220,8 @@ public class IndevChunkGenerator extends SurfaceChunkGenerator<IndevChunkGenerat
 						double ovar32 = clamp(getNoise(8, x + (layer * 2000), z + (layer * 2000), 50, 50, 0));
 						int lowerBound = (int) (ovar32 * (seaLevel / 2)) + 20 + (layer * 45) + thickness;
 
-						boolean flagSand = noiseGen3.sample(x + (layer * 2000F), z + (layer * 2000F)) > 52D + (less / 3D); 
-						boolean flagGravel = noiseGen11.sample(x + (layer * 2000F), z + (layer * 2000F)) > 62D + (less / 3D); 
+						boolean flagSand = noiseGen3.sample(x + (layer * 2000F), z + (layer * 2000F)) > 52D + (less / 3D);
+						boolean flagGravel = noiseGen11.sample(x + (layer * 2000F), z + (layer * 2000F)) > 62D + (less / 3D);
 
 						for (int y = 0; y < 256; y++) {
 							posMutable.setY(y);
