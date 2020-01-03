@@ -18,21 +18,20 @@ import net.minecraft.world.biome.layer.AddMushroomIslandLayer;
 import net.minecraft.world.biome.layer.AddRiversLayer;
 import net.minecraft.world.biome.layer.AddSunflowerPlainsLayer;
 import net.minecraft.world.biome.layer.ApplyOceanTemperatureLayer;
-import net.minecraft.world.biome.layer.BiomeLayerSampler;
-import net.minecraft.world.biome.layer.CachingLayerContext;
-import net.minecraft.world.biome.layer.CachingLayerSampler;
-import net.minecraft.world.biome.layer.CellScaleLayer;
 import net.minecraft.world.biome.layer.EaseBiomeEdgeLayer;
 import net.minecraft.world.biome.layer.IncreaseEdgeCurvatureLayer;
-import net.minecraft.world.biome.layer.LayerFactory;
-import net.minecraft.world.biome.layer.LayerSampleContext;
-import net.minecraft.world.biome.layer.LayerSampler;
 import net.minecraft.world.biome.layer.OceanTemperatureLayer;
-import net.minecraft.world.biome.layer.ParentedLayer;
 import net.minecraft.world.biome.layer.ScaleLayer;
 import net.minecraft.world.biome.layer.SetBaseBiomesLayer;
 import net.minecraft.world.biome.layer.SimpleLandNoiseLayer;
 import net.minecraft.world.biome.layer.SmoothenShorelineLayer;
+import net.minecraft.world.biome.layer.type.ParentedLayer;
+import net.minecraft.world.biome.layer.util.CachingLayerContext;
+import net.minecraft.world.biome.layer.util.CachingLayerSampler;
+import net.minecraft.world.biome.layer.util.LayerFactory;
+import net.minecraft.world.biome.layer.util.LayerSampleContext;
+import net.minecraft.world.biome.layer.util.LayerSampler;
+import net.minecraft.world.biome.source.BiomeLayerSampler;
 import net.minecraft.world.gen.chunk.OverworldChunkGeneratorConfig;
 import net.minecraft.world.level.LevelGeneratorType;
 
@@ -69,7 +68,7 @@ public final class OldBiomeLayers {
 
 		LayerFactory<T> noise = stackRepeat(1000L, ScaleLayer.NORMAL, continent, 0, contextProvider);
 		noise = SimpleLandNoiseLayer.INSTANCE.create(contextProvider.apply(100L), noise);
-		LayerFactory<T> biomes = (new SetBaseBiomesLayer(LevelGeneratorType.DEFAULT, settings)).create(contextProvider.apply(200L), continent);
+		LayerFactory<T> biomes = (new SetBaseBiomesLayer(LevelGeneratorType.DEFAULT, -1)).create(contextProvider.apply(200L), continent);
 		biomes = AddBambooJungleLayer.INSTANCE.create(contextProvider.apply(1001L), biomes);
 		biomes = stackRepeat(1000L, ScaleLayer.NORMAL, biomes, 1, contextProvider);
 		if (!IndevWorldGen.config.generateSwamps) {
@@ -102,10 +101,6 @@ public final class OldBiomeLayers {
 		LayerFactory<T> ocean = AlwaysOceanLayer.INSTANCE.create(contextProvider.apply(1L));
 		ocean = ApplyOceanTemperatureLayer.INSTANCE.create(contextProvider.apply(100L), ocean, oceanTemperature);
 
-		// final stuff. won't be neccessary on 1.15.
-		biomes = CellScaleLayer.INSTANCE.create(contextProvider.apply(10L), biomes);
-		ocean = CellScaleLayer.INSTANCE.create(contextProvider.apply(10L), ocean);
-
 		return ImmutableList.of(ocean, biomes);
 	}
 
@@ -130,8 +125,8 @@ public final class OldBiomeLayers {
 		}
 
 		@Override
-		public BiomeLayerSampler getSampler(HeightRetriever heightRetriever, int x, int z) {
-			if (heightRetriever.getHeight(x, z) < heightRetriever.getSeaLevelForBiomeGen()) {
+		public BiomeLayerSampler getSampler(HeightRetriever heightRetriever, int genX, int genZ) {
+			if (heightRetriever.getHeight(genX << 2, genZ << 2) < heightRetriever.getSeaLevelForBiomeGen()) {
 				return this.oceanSampler;
 			} else {
 				return this.landSampler;

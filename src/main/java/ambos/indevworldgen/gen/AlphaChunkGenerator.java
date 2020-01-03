@@ -1,8 +1,6 @@
 package ambos.indevworldgen.gen;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 
 import ambos.indevworldgen.IndevWorldGen;
@@ -16,14 +14,12 @@ import net.minecraft.entity.EntityCategory;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.crash.CrashException;
 import net.minecraft.util.crash.CrashReport;
-import net.minecraft.util.crash.CrashReportSection;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.village.ZombieSiegeManager;
 import net.minecraft.world.ChunkRegion;
 import net.minecraft.world.Heightmap.Type;
 import net.minecraft.world.IWorld;
-import net.minecraft.world.SpawnHelper;
 import net.minecraft.world.biome.Biome;
 import net.minecraft.world.biome.source.BiomeSource;
 import net.minecraft.world.chunk.Chunk;
@@ -32,15 +28,9 @@ import net.minecraft.world.gen.ChunkRandom;
 import net.minecraft.world.gen.GenerationStep;
 import net.minecraft.world.gen.PhantomSpawner;
 import net.minecraft.world.gen.PillagerSpawner;
-import net.minecraft.world.gen.chunk.SurfaceChunkGenerator;
-import net.minecraft.world.gen.decorator.CountExtraChanceDecoratorConfig;
-import net.minecraft.world.gen.decorator.Decorator;
-import net.minecraft.world.gen.feature.ConfiguredFeature;
 import net.minecraft.world.gen.feature.Feature;
-import net.minecraft.world.gen.feature.FeatureConfig;
-import net.minecraft.world.gen.feature.RandomFeatureConfig;
 
-public class AlphaChunkGenerator extends SurfaceChunkGenerator<AlphaChunkGeneratorConfig> implements HeightRetriever {
+public class AlphaChunkGenerator extends OldChunkGeneratorCommon<AlphaChunkGeneratorConfig> implements HeightRetriever {
 	private OctaveAlpha11NoiseSampler noise1;
 	private OctaveAlpha11NoiseSampler noise2;
 	private OctaveAlpha11NoiseSampler noise3;
@@ -56,8 +46,10 @@ public class AlphaChunkGenerator extends SurfaceChunkGenerator<AlphaChunkGenerat
 	private double[] gravelSample = new double[256];
 	private double[] stoneNoise = new double[256];
 
+	private final Random random = new Random();
+
 	public AlphaChunkGenerator(IWorld world, BiomeSource biomeSource, AlphaChunkGeneratorConfig config) {
-		super(world, biomeSource, 4, 8, 256, config, true);
+		super(world, biomeSource, config);
 
 		Random rand = new Random(world.getSeed());
 
@@ -70,31 +62,9 @@ public class AlphaChunkGenerator extends SurfaceChunkGenerator<AlphaChunkGenerat
 		noise7 = new OctaveAlpha11NoiseSampler(rand, 16);
 		treeNoise = new OctaveAlpha11NoiseSampler(rand, 8);
 
-		this.random.consume(2620);
-
 		if (biomeSource instanceof OldBiomeSource) {
 			((OldBiomeSource) biomeSource).setHeightRetriever(this);
 		}
-		
-		/* for (int testX = 0; testX < 16; ++testX) {
-			for (int testZ = 0; testZ < 16; ++testZ) {
-				System.out.println(toString(testX) + ", " + toString(testZ) + ": " + getHeight_OLD(testX, testZ));
-			}
-		} // */
-	}
-	
-	/* private static String toString(int i) {
-		return String.valueOf(i);
-	} // */
-
-	@Override
-	public void populateEntities(ChunkRegion region) {
-		int centreX = region.getCenterChunkX();
-		int centreZ = region.getCenterChunkZ();
-		Biome biome = region.getChunk(centreX, centreZ).getBiomeArray()[0];
-		ChunkRandom rand = new ChunkRandom();
-		rand.setSeed(region.getSeed(), centreX << 4, centreZ << 4);
-		SpawnHelper.populateEntities(region, biome, centreX, centreZ, rand);
 	}
 
 	private static final BlockState AIR = Blocks.AIR.getDefaultState();
@@ -273,15 +243,14 @@ public class AlphaChunkGenerator extends SurfaceChunkGenerator<AlphaChunkGenerat
 	}
 
 	@Override
-	public void buildSurface(Chunk chunk) {
+	public void buildSurface(ChunkRegion region, Chunk chunk) {
 		this.replaceSurfaceBlocks(chunk);
-	}
-
-	@Override
-	protected void buildBedrock(Chunk chunk, Random random) {
+		
 	}
 
 	private void replaceSurfaceBlocks(Chunk chunk) {
+		random.setSeed(this.seed);
+
 		BlockPos.Mutable pos = new BlockPos.Mutable();
 
 		int chunkX = chunk.getPos().x;
@@ -379,7 +348,7 @@ public class AlphaChunkGenerator extends SurfaceChunkGenerator<AlphaChunkGenerat
 		int x = chunkX * 16;
 		int z = chunkZ * 16;
 		BlockPos pos = new BlockPos(x, 0, z);
-		Biome biome = this.getDecorationBiome(region, pos.add(8, 8, 8));
+		Biome biome = this.getDecorationBiome(region.getBiomeAccess(), pos.add(8, 8, 8));
 		ChunkRandom random = new ChunkRandom();
 		long seed = random.setSeed(region.getSeed(), x, z);
 		GenerationStep.Feature[] featureSteps = GenerationStep.Feature.values();
@@ -390,7 +359,7 @@ public class AlphaChunkGenerator extends SurfaceChunkGenerator<AlphaChunkGenerat
 
 			try {
 				if (step == GenerationStep.Feature.VEGETAL_DECORATION) {
-					this.alphaDecorateTrees(chunkX, chunkZ, x, z, pos, region);
+					this.alphaDecorateTrees(chunkX, chunkZ, x, z, pos, region, this.treeNoise);
 				} else {
 					biome.generateFeatureStep(step, this, region, seed, random, pos);
 				}
@@ -402,47 +371,6 @@ public class AlphaChunkGenerator extends SurfaceChunkGenerator<AlphaChunkGenerat
 		}
 	}
 
-	private final ChunkRandom alphaTreeRand = new ChunkRandom();
-
-	// I copy pasted this from the alpha 1.1.2_01 jar file lol
-	// I knew one day my alpha mapping files would be useful :P (not really, but it's nice that they were)
-	private void alphaDecorateTrees(int chunkX, int chunkZ, int x, int z, BlockPos pos, IWorld region) {
-		this.alphaTreeRand.setSeed(this.seed);
-		this.alphaTreeRand.setSeed(chunkX * (this.alphaTreeRand.nextLong() / 2L * 2L + 1L) + chunkZ * (this.alphaTreeRand.nextLong() / 2L * 2L + 1L) ^ this.seed);
-
-		double scale = 0.5;
-		int count = (int)((this.treeNoise.sample(x * scale, z * scale) / 8.0 + this.alphaTreeRand.nextDouble() * 4.0 + 4.0) / 3.0);
-		if (count < 0) {
-			count = 0;
-		}
-
-		if (this.alphaTreeRand.nextInt(10) == 0) {
-			++count;
-		}
-
-		ConfiguredFeature<?> randomTreeProvider = getConfiguredTreeFeature(count);
-
-		// the tree provider is sometimes null so this check is neccessary
-		if (randomTreeProvider != null && count > 0) {
-			try {
-				randomTreeProvider.generate(region, this, alphaTreeRand, pos);
-			} catch (Exception e) {
-				CrashReport crashReport = CrashReport.create(e, "Feature placement");
-				CrashReportSection reportSection = crashReport.addElement("Feature").add("Id", (Object)Registry.FEATURE.getId(randomTreeProvider.feature));
-				Feature<?> reportFeature = randomTreeProvider.feature;
-				reportSection.add("Description", reportFeature::toString);
-				throw new CrashException(crashReport);
-			}
-		}
-	}
-
-	private static ConfiguredFeature<?> getConfiguredTreeFeature(int count) {
-		return configuredTreeCache.computeIfAbsent(count, e -> Biome.configureFeature(Feature.RANDOM_SELECTOR, new RandomFeatureConfig(new Feature[]{Feature.FANCY_TREE}, new FeatureConfig[]{FeatureConfig.DEFAULT}, new float[]{0.1f}, Feature.NORMAL_TREE, FeatureConfig.DEFAULT), Decorator.COUNT_EXTRA_HEIGHTMAP, new CountExtraChanceDecoratorConfig(count, 0.0f, 0)));
-	}
-
-	private static final Map<Integer, ConfiguredFeature<?>> configuredTreeCache = new HashMap<>();
-
-	// */
 	// overworld behaviour
 	private final PhantomSpawner phantomSpawner = new PhantomSpawner();
 	private final PillagerSpawner pillagerSpawner = new PillagerSpawner();
@@ -481,20 +409,6 @@ public class AlphaChunkGenerator extends SurfaceChunkGenerator<AlphaChunkGenerat
 		this.pillagerSpawner.spawn(serverWorld, spawnMonsters, spawnAnimals);
 		this.catSpawner.spawn(serverWorld, spawnMonsters, spawnAnimals);
 		this.zombieSiegeManager.tick(serverWorld, spawnMonsters, spawnAnimals);
-	}
-
-	// We don't actually need these
-	@Override
-	protected void sampleNoiseColumn(double[] array, int x, int z) {
-		this.sampleNoiseColumn(array, x, z, 684.4119873046875D, 684.4119873046875D, 8.555149841308594D, 4.277574920654297D, 3, -10);
-	}
-	@Override
-	protected double computeNoiseFalloff(double depth, double scale, int y) {
-		return 0.1f;
-	}
-	@Override
-	protected double[] computeNoiseRange(int x, int z) {
-		return new double[] {0.1f, 0.1f}; 
 	}
 
 	@Override

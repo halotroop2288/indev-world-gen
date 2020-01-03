@@ -16,14 +16,14 @@ import net.minecraft.world.level.LevelGeneratorType;
 
 @Mixin(OverworldDimension.class)
 public abstract class MixinOverworldDimension extends Dimension {
-	public MixinOverworldDimension(World world, DimensionType type) {
-		super(world, type);
+	public MixinOverworldDimension(World world, DimensionType type, float f) {
+		super(world, type, f);
 	}
-	
+
 	@Inject(method = "createChunkGenerator", at = @At("RETURN"), cancellable = true)
 	public void createChunkGenerator(CallbackInfoReturnable<ChunkGenerator<? extends ChunkGeneratorConfig>> info) {
 		LevelGeneratorType type = this.world.getLevelProperties().getGeneratorType();
-		
+
 		if(OldWorldType.LGT_TO_WT_MAP.containsKey(type)) {
 			OldWorldType<?> worldType = OldWorldType.LGT_TO_WT_MAP.get(type);
 			info.setReturnValue(

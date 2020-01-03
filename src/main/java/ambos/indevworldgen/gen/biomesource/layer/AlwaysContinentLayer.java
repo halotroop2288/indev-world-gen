@@ -1,7 +1,7 @@
 package ambos.indevworldgen.gen.biomesource.layer;
 
-import net.minecraft.world.biome.layer.InitLayer;
-import net.minecraft.world.biome.layer.LayerRandomnessSource;
+import net.minecraft.world.biome.layer.type.InitLayer;
+import net.minecraft.world.biome.layer.util.LayerRandomnessSource;
 
 public enum AlwaysContinentLayer implements InitLayer {
 	INSTANCE;

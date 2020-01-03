@@ -2,8 +2,8 @@ package ambos.indevworldgen.gen.biomesource.layer;
 
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.biome.Biomes;
-import net.minecraft.world.biome.layer.LayerRandomnessSource;
-import net.minecraft.world.biome.layer.SouthEastSamplingLayer;
+import net.minecraft.world.biome.layer.type.SouthEastSamplingLayer;
+import net.minecraft.world.biome.layer.util.LayerRandomnessSource;
 
 public enum YeetSwampsOutOfExistanceLayer implements SouthEastSamplingLayer {
 	INSTANCE;

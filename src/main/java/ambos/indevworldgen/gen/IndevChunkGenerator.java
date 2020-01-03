@@ -1,8 +1,6 @@
 package ambos.indevworldgen.gen;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 
 import ambos.indevworldgen.IndevWorldGen;
@@ -18,15 +16,14 @@ import net.minecraft.entity.EntityCategory;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.crash.CrashException;
 import net.minecraft.util.crash.CrashReport;
-import net.minecraft.util.crash.CrashReportSection;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.village.ZombieSiegeManager;
 import net.minecraft.world.ChunkRegion;
 import net.minecraft.world.IWorld;
-import net.minecraft.world.SpawnHelper;
 import net.minecraft.world.biome.Biome;
+import net.minecraft.world.biome.source.BiomeAccess;
 import net.minecraft.world.biome.source.BiomeSource;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.gen.CatSpawner;
@@ -35,16 +32,9 @@ import net.minecraft.world.gen.GenerationStep;
 import net.minecraft.world.gen.GenerationStep.Carver;
 import net.minecraft.world.gen.PhantomSpawner;
 import net.minecraft.world.gen.PillagerSpawner;
-import net.minecraft.world.gen.chunk.SurfaceChunkGenerator;
-import net.minecraft.world.gen.decorator.CountExtraChanceDecoratorConfig;
-import net.minecraft.world.gen.decorator.Decorator;
-import net.minecraft.world.gen.feature.ConfiguredFeature;
 import net.minecraft.world.gen.feature.Feature;
-import net.minecraft.world.gen.feature.FeatureConfig;
-import net.minecraft.world.gen.feature.RandomFeatureConfig;
 
-public class IndevChunkGenerator extends SurfaceChunkGenerator<IndevChunkGeneratorConfig> implements HeightRetriever {
-
+public class IndevChunkGenerator extends OldChunkGeneratorCommon<IndevChunkGeneratorConfig> implements HeightRetriever {
 	public static enum Type {
 		ISLAND,
 		WOODS,
@@ -69,14 +59,17 @@ public class IndevChunkGenerator extends SurfaceChunkGenerator<IndevChunkGenerat
 	public OctaveIndevNoiseSampler noiseGen10;
 	public OctaveIndevNoiseSampler noiseGen11;
 	public IndevNoiseSampler perlin;
-	
+
 	public OctaveAlpha11NoiseSampler alphaTreeNoise;
 
+	public final Random random = new Random();
+
 	public IndevChunkGenerator(IWorld world, BiomeSource biomeSource, IndevChunkGeneratorConfig config) {
-		super(world, biomeSource, 4, 8, 256, config, true);
-		
+		super(world, biomeSource, config);
+
 		Random rand = new Random(world.getSeed());
-		
+		this.random.setSeed(this.seed);
+
 		this.noiseGen1 = new OctaveIndevNoiseSampler(rand, 16);
 		this.noiseGen2 = new OctaveIndevNoiseSampler(rand, 16);
 		this.noiseGen3 = new OctaveIndevNoiseSampler(rand, 8);
@@ -86,28 +79,16 @@ public class IndevChunkGenerator extends SurfaceChunkGenerator<IndevChunkGenerat
 		this.noiseGen10 = new OctaveIndevNoiseSampler(rand, 6);
 		this.noiseGen11 = new OctaveIndevNoiseSampler(rand, 8);
 		this.perlin = new IndevNoiseSampler(this.random);
-		
+
 		this.alphaTreeNoise = new OctaveAlpha11NoiseSampler(rand, 8);
 
 		type = config.getType();
 
 		this.size = type == Type.FLOATING ? 12 : 7;
-		
+
 		if (biomeSource instanceof OldBiomeSource) {
 			((OldBiomeSource) biomeSource).setHeightRetriever(this);
 		}
-
-		this.random.consume(2620);
-	}
-
-	@Override
-	public void populateEntities(ChunkRegion region) {
-		int centreX = region.getCenterChunkX();
-		int centreZ = region.getCenterChunkZ();
-		Biome biome = region.getChunk(centreX, centreZ).getBiomeArray()[0];
-		ChunkRandom rand = new ChunkRandom();
-		rand.setSeed(region.getSeed(), centreX << 4, centreZ << 4);
-		SpawnHelper.populateEntities(region, biome, centreX, centreZ, rand);
 	}
 
 	private static final BlockState AIR = Blocks.AIR.getDefaultState();
@@ -122,7 +103,7 @@ public class IndevChunkGenerator extends SurfaceChunkGenerator<IndevChunkGenerat
 	}
 
 	@Override
-	public void buildSurface(Chunk chunk) {
+	public void buildSurface(ChunkRegion region, Chunk chunk) {
 		ChunkPos chunkPos = chunk.getPos();
 		if (this.type == Type.FLOATING) {
 			this.generateSkylands(chunk, chunkPos.x, chunkPos.z);
@@ -171,9 +152,9 @@ public class IndevChunkGenerator extends SurfaceChunkGenerator<IndevChunkGenerat
 	}
 
 	@Override
-	public void carve(Chunk chunk, Carver carverStep) {
+	public void carve(BiomeAccess access, Chunk chunk, Carver carverStep) {
 		if (this.type != Type.FLOATING) {
-			super.carve(chunk, carverStep);
+			super.carve(access, chunk, carverStep);
 		}
 	}
 
@@ -403,7 +384,7 @@ public class IndevChunkGenerator extends SurfaceChunkGenerator<IndevChunkGenerat
 	public int getSeaLevel() {
 		return 64;
 	}
-	
+
 	@Override
 	public void generateFeatures(ChunkRegion region) {
 		if (IndevWorldGen.config.alphaTreePlacementStyle && (this.type != Type.WOODS)) {
@@ -419,7 +400,7 @@ public class IndevChunkGenerator extends SurfaceChunkGenerator<IndevChunkGenerat
 		int x = chunkX * 16;
 		int z = chunkZ * 16;
 		BlockPos pos = new BlockPos(x, 0, z);
-		Biome biome = this.getDecorationBiome(region, pos.add(8, 8, 8));
+		Biome biome = this.getDecorationBiome(region.getBiomeAccess(), pos.add(8, 8, 8));
 		ChunkRandom random = new ChunkRandom();
 		long seed = random.setSeed(region.getSeed(), x, z);
 		GenerationStep.Feature[] featureSteps = GenerationStep.Feature.values();
@@ -430,7 +411,7 @@ public class IndevChunkGenerator extends SurfaceChunkGenerator<IndevChunkGenerat
 
 			try {
 				if (step == GenerationStep.Feature.VEGETAL_DECORATION) {
-					this.alphaDecorateTrees(chunkX, chunkZ, x, z, pos, region);
+					this.alphaDecorateTrees(chunkX, chunkZ, x, z, pos, region, this.alphaTreeNoise);
 				} else {
 					biome.generateFeatureStep(step, this, region, seed, random, pos);
 				}
@@ -441,46 +422,6 @@ public class IndevChunkGenerator extends SurfaceChunkGenerator<IndevChunkGenerat
 			}
 		}
 	}
-
-	private final ChunkRandom alphaTreeRand = new ChunkRandom();
-
-	// I copy pasted this from the alpha 1.1.2_01 jar file lol
-	// I knew one day my alpha mapping files would be useful :P (not really, but it's nice that they were)
-	private void alphaDecorateTrees(int chunkX, int chunkZ, int x, int z, BlockPos pos, IWorld region) {
-		this.alphaTreeRand.setSeed(this.seed);
-		this.alphaTreeRand.setSeed(chunkX * (this.alphaTreeRand.nextLong() / 2L * 2L + 1L) + chunkZ * (this.alphaTreeRand.nextLong() / 2L * 2L + 1L) ^ this.seed);
-
-		double scale = 0.5;
-		int count = (int)((this.alphaTreeNoise.sample(x * scale, z * scale) / 8.0 + this.alphaTreeRand.nextDouble() * 4.0 + 4.0) / 3.0);
-		if (count < 0) {
-			count = 0;
-		}
-
-		if (this.alphaTreeRand.nextInt(10) == 0) {
-			++count;
-		}
-
-		ConfiguredFeature<?> randomTreeProvider = getConfiguredTreeFeature(count);
-		
-		// the tree provider is sometimes null so this check is neccessary
-		if (randomTreeProvider != null && count > 0) {
-			try {
-				randomTreeProvider.generate(region, this, alphaTreeRand, pos);
-			} catch (Exception e) {
-				CrashReport crashReport = CrashReport.create(e, "Feature placement");
-				CrashReportSection reportSection = crashReport.addElement("Feature").add("Id", (Object)Registry.FEATURE.getId(randomTreeProvider.feature));
-				Feature<?> reportFeature = randomTreeProvider.feature;
-				reportSection.add("Description", reportFeature::toString);
-				throw new CrashException(crashReport);
-			}
-		}
-	}
-
-	private static ConfiguredFeature<?> getConfiguredTreeFeature(int count) {
-		return configuredTreeCache.computeIfAbsent(count, e -> Biome.configureFeature(Feature.RANDOM_SELECTOR, new RandomFeatureConfig(new Feature[]{Feature.FANCY_TREE}, new FeatureConfig[]{FeatureConfig.DEFAULT}, new float[]{0.1f}, Feature.NORMAL_TREE, FeatureConfig.DEFAULT), Decorator.COUNT_EXTRA_HEIGHTMAP, new CountExtraChanceDecoratorConfig(count, 0.0f, 0)));
-	}
-
-	private static final Map<Integer, ConfiguredFeature<?>> configuredTreeCache = new HashMap<>();
 
 	// overworld behaviour
 	private final PhantomSpawner phantomSpawner = new PhantomSpawner();
@@ -520,20 +461,6 @@ public class IndevChunkGenerator extends SurfaceChunkGenerator<IndevChunkGenerat
 		this.pillagerSpawner.spawn(serverWorld, spawnMonsters, spawnAnimals);
 		this.catSpawner.spawn(serverWorld, spawnMonsters, spawnAnimals);
 		this.zombieSiegeManager.tick(serverWorld, spawnMonsters, spawnAnimals);
-	}
-
-	// We don't need these
-	@Override
-	protected void sampleNoiseColumn(double[] array, int x, int z) {
-		this.sampleNoiseColumn(array, x, z, 684.4119873046875D, 684.4119873046875D, 8.555149841308594D, 4.277574920654297D, 3, -10);
-	}
-	@Override
-	protected double computeNoiseFalloff(double depth, double scale, int y) {
-		return 0.1f;
-	}
-	@Override
-	protected double[] computeNoiseRange(int x, int z) {
-		return new double[] {0.1f, 0.1f}; 
 	}
 
 	@Override
@@ -616,7 +543,7 @@ public class IndevChunkGenerator extends SurfaceChunkGenerator<IndevChunkGenerat
 
 		return maxGroundY;
 	}
-	
+
 	@Override
 	public int getHeightOnGround(int x, int z, net.minecraft.world.Heightmap.Type heightmapType) {
 		return this.getHeight(x, z) + 1;
