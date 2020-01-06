@@ -23,11 +23,7 @@ import net.minecraft.world.IWorld;
 import net.minecraft.world.biome.Biome;
 import net.minecraft.world.biome.source.BiomeSource;
 import net.minecraft.world.chunk.Chunk;
-import net.minecraft.world.gen.CatSpawner;
-import net.minecraft.world.gen.ChunkRandom;
-import net.minecraft.world.gen.GenerationStep;
-import net.minecraft.world.gen.PhantomSpawner;
-import net.minecraft.world.gen.PillagerSpawner;
+import net.minecraft.world.gen.*;
 import net.minecraft.world.gen.feature.Feature;
 
 public class AlphaChunkGenerator extends OldChunkGeneratorCommon<AlphaChunkGeneratorConfig> implements HeightRetriever {
