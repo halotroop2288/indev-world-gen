@@ -63,7 +63,7 @@ public abstract class OldChunkGeneratorCommon<T extends ChunkGeneratorConfig> ex
 
 		ConfiguredFeature<?, ?> randomTreeProvider = getConfiguredTreeFeature(count);
 
-		// the tree provider is sometimes null so this check is neccessary
+		// the tree provider is sometimes null so this check is necessary
 		if (randomTreeProvider != null && count > 0) {
 			try {
 				randomTreeProvider.generate(region, this, alphaTreeRand, pos);

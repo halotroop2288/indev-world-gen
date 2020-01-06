@@ -50,7 +50,6 @@ public class OldWorldType<T extends ChunkGenerator<?>> {
 
 	public static final OldWorldType<IndevChunkGenerator> INDEV_HELL = new OldWorldType<>("old_indev_hell", (world) -> {
 		IndevChunkGeneratorConfig chunkGenConfig = new IndevChunkGeneratorConfig();
-
 		chunkGenConfig.setType(IndevChunkGenerator.Type.HELL);
 		return IndevWorldGen.INDEV_CGT.create(world, new OldBiomeSource(world.getSeed(), chunkGenConfig), chunkGenConfig);
 	});

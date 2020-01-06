@@ -40,8 +40,10 @@ public class IndevWorldGen implements ModInitializer {
 
 		loadMeOnClientPls = OldWorldType.INDEV;
 
-		INDEV_CGT = Registry.register(Registry.CHUNK_GENERATOR_TYPE, IndevWorldGen.id("old_indev"), new IndevChunkGeneratorType(false, () -> new IndevChunkGeneratorConfig()));
-		ALPHA_CGT = Registry.register(Registry.CHUNK_GENERATOR_TYPE, IndevWorldGen.id("old_alpha"), new AlphaChunkGeneratorType(false, () -> new AlphaChunkGeneratorConfig()));
+		INDEV_CGT = Registry.register(Registry.CHUNK_GENERATOR_TYPE, IndevWorldGen.id("old_indev"), new IndevChunkGeneratorType(false, () ->
+		new IndevChunkGeneratorConfig()));
+		ALPHA_CGT = Registry.register(Registry.CHUNK_GENERATOR_TYPE, IndevWorldGen.id("old_alpha"), new AlphaChunkGeneratorType(false, () ->
+		new AlphaChunkGeneratorConfig()));
 	}
 
 	private static void loadConfig() {
