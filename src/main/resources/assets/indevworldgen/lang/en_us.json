@@ -5,5 +5,6 @@
   "generator.old_indev_woods": "Indev Woods",
   "generator.old_indev_island": "Indev Island",
   "generator.old_indev_paradise": "Indev Paradise",
-  "generator.old_alpha": "Alpha"
+  "generator.old_alpha": "Alpha",
+  "createWorld.customize.indev.title": "Indev world type picker"
 }
