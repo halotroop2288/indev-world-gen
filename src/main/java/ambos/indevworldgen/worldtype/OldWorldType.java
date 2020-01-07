@@ -84,11 +84,11 @@ public class OldWorldType<T extends ChunkGenerator<?>> {
 		return IndevWorldGen.INDEV_CGT.create(world, new OldBiomeSource(world.getSeed(), chunkGenConfig), chunkGenConfig);
 	});
 
-	public static final OldWorldType<AlphaChunkGenerator> ALPHA = new OldWorldType<>("old_alpha", (world) -> {
-		AlphaChunkGeneratorConfig chunkGenConfig = new AlphaChunkGeneratorConfig();
-
-		return IndevWorldGen.ALPHA_CGT.create(world, new OldBiomeSource(world.getSeed(), chunkGenConfig), chunkGenConfig);
-	});
+//	public static final OldWorldType<AlphaChunkGenerator> ALPHA = new OldWorldType<>("old_alpha", (world) -> {
+//		AlphaChunkGeneratorConfig chunkGenConfig = new AlphaChunkGeneratorConfig();
+//
+//		return IndevWorldGen.ALPHA_CGT.create(world, new OldBiomeSource(world.getSeed(), chunkGenConfig), chunkGenConfig);
+//	});
 	// ===========================================================
 	// ideally the indev ones would be settings of the same world type
 	// but idk how to do world type settings screens
