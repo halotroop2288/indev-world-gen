@@ -1,16 +1,18 @@
 {
   "schemaVersion": 1,
   "id": "indevworldgen",
-  "version": "${version}",
+  "version": "0.1.1",
 
   "name": "Indev World Gen",
-  "description": "",
+  "description": "A mod that brings back old terrain generation",
   "authors": [
-    "Ambos"
+    "Ambos",
+    "Valoeghese"
   ],
   "contact": {
-    "homepage": "",
-    "sources": ""
+    "homepage": "https://www.curseforge.com/minecraft/mc-mods/indev-world-gen",
+    "sources": "https://github.com/Amb0s/indev-world-gen",
+    "issues": "https://github.com/Amb0s/indev-world-gen/issues"
   },
 
   "license": "MIT",
