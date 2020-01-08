@@ -1,10 +1,11 @@
 {
-  "generator.old_indev": "Indev Inland",
-  "generator.old_indev_hell": "Indev Hell",
-  "generator.old_indev_floating": "Indev Floating",
-  "generator.old_indev_woods": "Indev Woods",
-  "generator.old_indev_island": "Indev Island",
-  "generator.old_indev_paradise": "Indev Paradise",
-  "generator.old_alpha": "Alpha",
-  "createWorld.customize.indev.title": "Indev world type picker"
+  "indev_maptype.inland": "Inland",
+  "indev_maptype.hell": "Hell",
+  "indev_maptype.floating": "Floating",
+  "indev_maptype.woods": "Woods",
+  "indev_maptype.island": "Island",
+  "indev_maptype.paradise": "Paradise",
+  "generator.pick_indev_map_type": "Type: ",
+  "generator.old_indev": "Indev",
+  "generator.old_alpha": "Alpha"
 }
