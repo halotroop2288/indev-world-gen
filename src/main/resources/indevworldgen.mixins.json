@@ -5,7 +5,8 @@
   "mixins": [
     "AccessorLevelGeneratorType",
     "MixinLevelGeneratorType",
-    "MixinOverworldDimension"
+    "MixinOverworldDimension",
+    "CreateWorldScreenMixin"
   ],
   "client": [
   ],

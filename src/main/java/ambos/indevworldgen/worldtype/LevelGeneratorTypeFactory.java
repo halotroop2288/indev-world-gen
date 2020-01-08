@@ -48,7 +48,7 @@ public final class LevelGeneratorTypeFactory {
 		}
 		try {
 			levelGenType = AccessorLevelGeneratorType.create(id, name);
-			levelGenType.setCustomizable(false);
+			levelGenType.setCustomizable(levelGenType.getName().contains("indev"));
 		} catch (Exception e) {
 			return null;
 		}
